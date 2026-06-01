@@ -252,6 +252,14 @@
             cursor: pointer;
             font-size: 0.8rem;
             color: #a78bfa;
+            user-select: none;
+        }
+        .reasoning-header .arrow {
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+        .reasoning-header.collapsed .arrow {
+            transform: rotate(-90deg);
         }
         .reasoning-content {
             padding: 12px 14px;
@@ -259,6 +267,9 @@
             color: var(--text-secondary);
             white-space: pre-wrap;
             border-top: 1px solid rgba(139, 92, 246, 0.2);
+        }
+        .reasoning-content.hidden {
+            display: none;
         }
         .message-toolbar {
             display: flex;
@@ -581,7 +592,6 @@
         } else {
             currentSessionId = sessions[0].id;
         }
-        // 加载 API Key 到模态框
         const savedKey = localStorage.getItem('deepseek_api_key');
         if (savedKey) modalApiKey.value = savedKey;
         const savedTemp = localStorage.getItem('deepseek_temperature');
@@ -592,7 +602,6 @@
         const savedReason = localStorage.getItem('deepseek_reasoning_mode');
         isReasoningMode = savedReason === 'true';
         modalReasoningToggle.checked = isReasoningMode;
-        // 加载字号和主题
         const savedFont = localStorage.getItem('deepseek_font_size');
         if (savedFont) setFontSize(savedFont);
         const savedTheme = localStorage.getItem('deepseek_theme');
@@ -621,7 +630,6 @@
         else if (size === 'xlarge') baseSize = '20px';
         root.style.fontSize = baseSize;
         localStorage.setItem('deepseek_font_size', size);
-        // 更新按钮激活样式
         document.querySelectorAll('.font-btn').forEach(btn => {
             if (btn.dataset.font === size) btn.classList.add('active');
             else btn.classList.remove('active');
@@ -641,8 +649,6 @@
             if (btn.dataset.theme === theme) btn.classList.add('active');
             else btn.classList.remove('active');
         });
-        // 重新渲染消息以适配新主题（代码高亮背景可能需要重新触发，但颜色由CSS变量控制，无需重新渲染）
-        // 但是 marked 渲染的代码块背景会跟随变量，所以只需切换body类即可。
     }
 
     // 会话管理
@@ -946,6 +952,7 @@
             const contentDiv = document.createElement('div');
             contentDiv.className = 'reasoning-content';
             contentDiv.textContent = msg.reasoning;
+            // 折叠状态默认为展开
             let collapsed = false;
             header.onclick = () => {
                 collapsed = !collapsed;
@@ -1020,15 +1027,24 @@
     // 模态框控制
     function openModal() {
         modalOverlay.classList.add('open');
-        // 同步当前设置到模态框
         modalApiKey.value = localStorage.getItem('deepseek_api_key') || '';
         modalTempSlider.value = localStorage.getItem('deepseek_temperature') || '1.5';
         tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1);
         modalReasoningToggle.checked = isReasoningMode;
+        // 更新开关样式
+        const toggleSpan = document.querySelector('.toggle-switch-big span');
+        if (toggleSpan) {
+            if (modalReasoningToggle.checked) {
+                toggleSpan.style.background = '#8b5cf6';
+                toggleSpan.nextElementSibling.style.transform = 'translateX(26px)';
+            } else {
+                toggleSpan.style.background = '#ccc';
+                toggleSpan.nextElementSibling.style.transform = 'translateX(0)';
+            }
+        }
     }
     function closeModal() {
         modalOverlay.classList.remove('open');
-        // 保存设置
         const newKey = modalApiKey.value.trim();
         const newTemp = parseFloat(modalTempSlider.value);
         const newReason = modalReasoningToggle.checked;
@@ -1037,7 +1053,6 @@
         localStorage.setItem('deepseek_reasoning_mode', newReason);
         isReasoningMode = newReason;
         saveSettings();
-        // 温度显示更新（非模态框的温度显示已在模态框中）
     }
 
     // 事件绑定
@@ -1074,28 +1089,24 @@
             setTheme(btn.dataset.theme);
         });
     });
-    // 关闭模态框时保存设置
+    // 深度思考开关样式联动
+    modalReasoningToggle.addEventListener('change', () => {
+        const toggleSpan = document.querySelector('.toggle-switch-big span');
+        if (toggleSpan) {
+            if (modalReasoningToggle.checked) {
+                toggleSpan.style.background = '#8b5cf6';
+                toggleSpan.nextElementSibling.style.transform = 'translateX(26px)';
+            } else {
+                toggleSpan.style.background = '#ccc';
+                toggleSpan.nextElementSibling.style.transform = 'translateX(0)';
+            }
+        }
+    });
+
     // 初始化
     loadData();
     renderSessions();
     renderMessages();
-    // 修正模态框内开关的样式（简易实现）
-    const toggleSwitchBig = document.querySelector('.toggle-switch-big');
-    if (toggleSwitchBig) {
-        const checkBox = modalReasoningToggle;
-        const span = toggleSwitchBig.querySelector('span');
-        function updateSwitch() {
-            if (checkBox.checked) {
-                span.style.background = '#8b5cf6';
-                span.nextElementSibling.style.transform = 'translateX(26px)';
-            } else {
-                span.style.background = '#ccc';
-                span.nextElementSibling.style.transform = 'translateX(0)';
-            }
-        }
-        checkBox.addEventListener('change', updateSwitch);
-        updateSwitch();
-    }
 
     document.addEventListener('click', (e) => {
         if (window.innerWidth <= 700 && sidebar.classList.contains('open')) {
