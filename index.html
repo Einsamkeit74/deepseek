@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>DeepSeek 专业版 · 可折叠设置</title>
+    <title>DeepSeek 专业版 · 固定备份名</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
+        /* 此处样式与上一版本完全相同，因篇幅省略，但实际会包含全部样式 */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
-        /* 主题变量（深色默认） */
         :root {
             --bg-sidebar: rgba(20, 20, 35, 0.95);
             --bg-main: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
@@ -57,7 +56,6 @@
             height: 100vh;
             width: 100%;
         }
-        /* 侧边栏 */
         .sidebar {
             width: 280px;
             background: var(--bg-sidebar);
@@ -125,7 +123,6 @@
             padding: 4px;
             border-radius: 6px;
         }
-        /* 主区域 */
         .main {
             flex: 1;
             display: flex;
@@ -177,7 +174,6 @@
             flex-direction: column;
             gap: 24px;
         }
-        /* 消息样式（使用相对字号） */
         .message-card {
             display: flex;
             gap: 12px;
@@ -356,7 +352,6 @@
             0%,60%,100%{ transform: translateY(0); }
             30%{ transform: translateY(-10px); }
         }
-        /* 模态框样式 */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -400,8 +395,7 @@
             margin-bottom: 8px;
             font-weight: 500;
         }
-        .modal-setting input[type="password"],
-        .modal-setting select {
+        .modal-setting select, .modal-setting input {
             width: 100%;
             padding: 8px 12px;
             border-radius: 20px;
@@ -412,12 +406,13 @@
         .temp-slider {
             width: 100%;
         }
-        .theme-buttons, .font-buttons {
+        .theme-buttons, .font-buttons, .backup-buttons {
             display: flex;
             gap: 10px;
             margin-top: 5px;
+            flex-wrap: wrap;
         }
-        .theme-btn, .font-btn {
+        .theme-btn, .font-btn, .backup-btn {
             flex: 1;
             padding: 8px;
             border-radius: 40px;
@@ -426,6 +421,7 @@
             color: var(--modal-text);
             cursor: pointer;
             text-align: center;
+            font-size: 0.8rem;
         }
         .theme-btn.active, .font-btn.active {
             background: #8b5cf6;
@@ -524,6 +520,21 @@
                 <div class="theme-btn" data-theme="light">浅色</div>
             </div>
         </div>
+        <div class="modal-setting">
+            <label>💾 自动备份间隔</label>
+            <select id="backupIntervalSelect">
+                <option value="0">关闭</option>
+                <option value="5">每 5 分钟</option>
+                <option value="15">每 15 分钟</option>
+                <option value="30">每 30 分钟</option>
+            </select>
+        </div>
+        <div class="backup-buttons">
+            <div class="backup-btn" id="manualBackupBtn">立即备份</div>
+            <div class="backup-btn" id="restoreBackupBtn">从备份恢复</div>
+            <div class="backup-btn" id="exportFileBtn">导出文件</div>
+            <div class="backup-btn" id="importFileBtn">导入文件</div>
+        </div>
         <button class="close-modal" id="closeModalBtn">关闭</button>
     </div>
 </div>
@@ -534,7 +545,8 @@
     let currentSessionId = null;
     let isWaiting = false;
     let isReasoningMode = false;
-
+    let backupIntervalId = null;
+    
     // DOM 元素
     const sidebar = document.getElementById('sidebar');
     const menuToggle = document.getElementById('menuToggle');
@@ -550,16 +562,20 @@
     const tempValueDisplay = document.getElementById('tempValueDisplay');
     const modalReasoningToggle = document.getElementById('modalReasoningToggle');
     const closeModalBtn = document.getElementById('closeModalBtn');
-
-    // 字号与主题
+    const backupIntervalSelect = document.getElementById('backupIntervalSelect');
+    const manualBackupBtn = document.getElementById('manualBackupBtn');
+    const restoreBackupBtn = document.getElementById('restoreBackupBtn');
+    const exportFileBtn = document.getElementById('exportFileBtn');
+    const importFileBtn = document.getElementById('importFileBtn');
+    
     let currentFont = 'medium';
     let currentTheme = 'dark';
-
+    
     // 辅助函数
     function generateId() {
         return Date.now() + '-' + Math.random().toString(36).substr(2, 8);
     }
-
+    
     function escapeHtml(str) {
         return str.replace(/[&<>]/g, function(m) {
             if (m === '&') return '&amp;';
@@ -568,23 +584,153 @@
             return m;
         });
     }
-
+    
     function renderMarkdown(text) {
         if (!text) return '';
         return marked.parse(text, { breaks: true, gfm: true });
     }
-
+    
+    // 备份核心：保存当前会话数据到备份区
+    function performBackup() {
+        if (!sessions.length) return;
+        const backupData = {
+            sessions: sessions,
+            currentSessionId: currentSessionId,
+            timestamp: Date.now()
+        };
+        localStorage.setItem('deepseek_auto_backup', JSON.stringify(backupData));
+        console.log('自动备份已执行', new Date().toLocaleTimeString());
+    }
+    
+    // 从备份恢复
+    function restoreFromBackup() {
+        const backupRaw = localStorage.getItem('deepseek_auto_backup');
+        if (!backupRaw) {
+            alert('没有找到备份数据');
+            return;
+        }
+        try {
+            const backup = JSON.parse(backupRaw);
+            if (backup.sessions && backup.sessions.length) {
+                sessions = backup.sessions;
+                currentSessionId = backup.currentSessionId;
+                saveSessions();
+                renderSessions();
+                renderMessages();
+                alert('已从备份恢复数据');
+            } else {
+                alert('备份数据无效');
+            }
+        } catch(e) {
+            alert('备份数据损坏');
+        }
+    }
+    
+    // 导出文件 - 固定文件名，实现覆盖旧文件
+    function exportToFile() {
+        const data = {
+            sessions: sessions,
+            currentSessionId: currentSessionId,
+            version: '1.0',
+            exportTime: Date.now()
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'deepseek_backup.json';   // 固定文件名，每次导出会提示覆盖
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    
+    // 导入文件
+    function importFromFile() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'application/json';
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                try {
+                    const imported = JSON.parse(ev.target.result);
+                    if (imported.sessions && imported.sessions.length) {
+                        sessions = imported.sessions;
+                        currentSessionId = imported.currentSessionId || sessions[0].id;
+                        saveSessions();
+                        renderSessions();
+                        renderMessages();
+                        alert('导入成功');
+                    } else {
+                        alert('文件格式不正确');
+                    }
+                } catch(err) {
+                    alert('解析失败');
+                }
+            };
+            reader.readAsText(file);
+        };
+        input.click();
+    }
+    
+    // 设置自动备份定时器
+    function setupAutoBackup(intervalMinutes) {
+        if (backupIntervalId) clearInterval(backupIntervalId);
+        if (intervalMinutes > 0) {
+            backupIntervalId = setInterval(() => {
+                performBackup();
+            }, intervalMinutes * 60 * 1000);
+        } else {
+            backupIntervalId = null;
+        }
+        localStorage.setItem('deepseek_backup_interval', intervalMinutes);
+    }
+    
     // 存储相关
     function loadData() {
         const stored = localStorage.getItem('deepseek_branch_sessions');
         if (stored) {
             sessions = JSON.parse(stored);
         } else {
-            sessions = [{
-                id: generateId(),
-                name: '新对话',
-                messages: []
-            }];
+            // 尝试从备份恢复
+            const backupRaw = localStorage.getItem('deepseek_auto_backup');
+            if (backupRaw) {
+                try {
+                    const backup = JSON.parse(backupRaw);
+                    if (backup.sessions && backup.sessions.length) {
+                        if (confirm('检测到之前的备份数据，是否恢复？')) {
+                            sessions = backup.sessions;
+                            currentSessionId = backup.currentSessionId;
+                            saveSessions();
+                        } else {
+                            sessions = [{
+                                id: generateId(),
+                                name: '新对话',
+                                messages: []
+                            }];
+                        }
+                    } else {
+                        sessions = [{
+                            id: generateId(),
+                            name: '新对话',
+                            messages: []
+                        }];
+                    }
+                } catch(e) {
+                    sessions = [{
+                        id: generateId(),
+                        name: '新对话',
+                        messages: []
+                    }];
+                }
+            } else {
+                sessions = [{
+                    id: generateId(),
+                    name: '新对话',
+                    messages: []
+                }];
+            }
         }
         const storedCurrent = localStorage.getItem('deepseek_branch_current');
         if (storedCurrent && sessions.find(s => s.id === storedCurrent)) {
@@ -592,6 +738,7 @@
         } else {
             currentSessionId = sessions[0].id;
         }
+        
         const savedKey = localStorage.getItem('deepseek_api_key');
         if (savedKey) modalApiKey.value = savedKey;
         const savedTemp = localStorage.getItem('deepseek_temperature');
@@ -606,20 +753,26 @@
         if (savedFont) setFontSize(savedFont);
         const savedTheme = localStorage.getItem('deepseek_theme');
         if (savedTheme) setTheme(savedTheme);
+        
+        // 设置备份间隔
+        const savedInterval = localStorage.getItem('deepseek_backup_interval');
+        let intervalValue = savedInterval ? parseInt(savedInterval) : 15;
+        if (isNaN(intervalValue)) intervalValue = 15;
+        backupIntervalSelect.value = intervalValue.toString();
+        setupAutoBackup(intervalValue);
     }
-
+    
     function saveSessions() {
         localStorage.setItem('deepseek_branch_sessions', JSON.stringify(sessions));
         localStorage.setItem('deepseek_branch_current', currentSessionId);
     }
-
+    
     function saveSettings() {
         localStorage.setItem('deepseek_api_key', modalApiKey.value.trim());
         localStorage.setItem('deepseek_temperature', modalTempSlider.value);
         localStorage.setItem('deepseek_reasoning_mode', isReasoningMode);
     }
-
-    // 字号设置
+    
     function setFontSize(size) {
         currentFont = size;
         const root = document.documentElement;
@@ -635,8 +788,7 @@
             else btn.classList.remove('active');
         });
     }
-
-    // 主题切换
+    
     function setTheme(theme) {
         currentTheme = theme;
         if (theme === 'light') {
@@ -650,8 +802,8 @@
             else btn.classList.remove('active');
         });
     }
-
-    // 会话管理
+    
+    // 会话管理函数
     function renderSessions() {
         sessionsList.innerHTML = '';
         sessions.forEach(session => {
@@ -676,7 +828,7 @@
             sessionsList.appendChild(div);
         });
     }
-
+    
     function switchSession(sessionId) {
         if (sessionId === currentSessionId) return;
         currentSessionId = sessionId;
@@ -684,7 +836,7 @@
         renderSessions();
         renderMessages();
     }
-
+    
     function renameSession(sessionId) {
         const session = sessions.find(s => s.id === sessionId);
         if (!session) return;
@@ -695,7 +847,7 @@
             renderSessions();
         }
     }
-
+    
     function deleteSession(sessionId) {
         if (sessions.length === 1) {
             alert('至少保留一个对话');
@@ -711,7 +863,7 @@
             renderMessages();
         }
     }
-
+    
     function newSession() {
         const newId = generateId();
         sessions.push({
@@ -724,12 +876,11 @@
         renderSessions();
         renderMessages();
     }
-
+    
     function getCurrentSession() {
         return sessions.find(s => s.id === currentSessionId);
     }
-
-    // 分支编辑
+    
     async function editUserMessageWithBranch(msgIndex, newContent) {
         const oldSession = getCurrentSession();
         if (!oldSession) return;
@@ -748,7 +899,7 @@
         renderSessions();
         await generateResponseForLastUserInSession(newSession);
     }
-
+    
     async function generateResponseForLastUserInSession(session) {
         const userMessages = session.messages.filter(m => m.role === 'user');
         if (userMessages.length === 0) return;
@@ -811,8 +962,7 @@
             messageInput.focus();
         }
     }
-
-    // 发送新消息
+    
     async function sendMessage() {
         const userInput = messageInput.value.trim();
         if (!userInput) return;
@@ -831,8 +981,7 @@
         messageInput.style.height = 'auto';
         await generateResponseForLastUserInSession(session);
     }
-
-    // 重新生成（多版本）
+    
     async function regenerateAssistant(msgIndex) {
         const session = getCurrentSession();
         if (!session) return;
@@ -888,7 +1037,7 @@
             sendBtn.disabled = false;
         }
     }
-
+    
     function switchVersion(msgIndex, versionIdx) {
         const session = getCurrentSession();
         if (!session) return;
@@ -900,8 +1049,7 @@
         saveSessions();
         renderMessages();
     }
-
-    // 渲染消息
+    
     function renderMessages() {
         const session = getCurrentSession();
         if (!session) return;
@@ -916,7 +1064,7 @@
         }
         scrollToBottom();
     }
-
+    
     function renderUserMessage(content, index) {
         const card = document.createElement('div');
         card.className = 'message-card user';
@@ -937,7 +1085,7 @@
         });
         messagesArea.appendChild(card);
     }
-
+    
     function renderAssistantMessage(msg, index) {
         const card = document.createElement('div');
         card.className = 'message-card assistant';
@@ -952,7 +1100,6 @@
             const contentDiv = document.createElement('div');
             contentDiv.className = 'reasoning-content';
             contentDiv.textContent = msg.reasoning;
-            // 折叠状态默认为展开
             let collapsed = false;
             header.onclick = () => {
                 collapsed = !collapsed;
@@ -1000,7 +1147,7 @@
         card.appendChild(bodyDiv);
         messagesArea.appendChild(card);
     }
-
+    
     function showTypingIndicator() {
         const indicator = document.createElement('div');
         indicator.className = 'message-card assistant';
@@ -1009,29 +1156,27 @@
         messagesArea.appendChild(indicator);
         scrollToBottom();
     }
-
+    
     function hideTypingIndicator() {
         const el = document.getElementById('typingIndicator');
         if (el) el.remove();
     }
-
+    
     function scrollToBottom() {
         messagesArea.scrollTop = messagesArea.scrollHeight;
     }
-
+    
     function autoResizeTextarea() {
         messageInput.style.height = 'auto';
         messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px';
     }
-
-    // 模态框控制
+    
     function openModal() {
         modalOverlay.classList.add('open');
         modalApiKey.value = localStorage.getItem('deepseek_api_key') || '';
         modalTempSlider.value = localStorage.getItem('deepseek_temperature') || '1.5';
         tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1);
         modalReasoningToggle.checked = isReasoningMode;
-        // 更新开关样式
         const toggleSpan = document.querySelector('.toggle-switch-big span');
         if (toggleSpan) {
             if (modalReasoningToggle.checked) {
@@ -1043,6 +1188,7 @@
             }
         }
     }
+    
     function closeModal() {
         modalOverlay.classList.remove('open');
         const newKey = modalApiKey.value.trim();
@@ -1053,8 +1199,11 @@
         localStorage.setItem('deepseek_reasoning_mode', newReason);
         isReasoningMode = newReason;
         saveSettings();
+        const newInterval = parseInt(backupIntervalSelect.value);
+        setupAutoBackup(newInterval);
+        localStorage.setItem('deepseek_backup_interval', newInterval);
     }
-
+    
     // 事件绑定
     newChatBtn.addEventListener('click', () => {
         newSession();
@@ -1077,19 +1226,16 @@
     modalTempSlider.addEventListener('input', () => {
         tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1);
     });
-    // 字号按钮
     document.querySelectorAll('.font-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             setFontSize(btn.dataset.font);
         });
     });
-    // 主题按钮
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             setTheme(btn.dataset.theme);
         });
     });
-    // 深度思考开关样式联动
     modalReasoningToggle.addEventListener('change', () => {
         const toggleSpan = document.querySelector('.toggle-switch-big span');
         if (toggleSpan) {
@@ -1102,12 +1248,20 @@
             }
         }
     });
-
+    
+    manualBackupBtn.addEventListener('click', () => {
+        performBackup();
+        alert('已手动备份当前数据');
+    });
+    restoreBackupBtn.addEventListener('click', restoreFromBackup);
+    exportFileBtn.addEventListener('click', exportToFile);
+    importFileBtn.addEventListener('click', importFromFile);
+    
     // 初始化
     loadData();
     renderSessions();
     renderMessages();
-
+    
     document.addEventListener('click', (e) => {
         if (window.innerWidth <= 700 && sidebar.classList.contains('open')) {
             if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
