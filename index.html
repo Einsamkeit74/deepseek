@@ -3,459 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>DeepSeek 专业版 · 固定备份名</title>
+    <title>DeepSeek 专业版 · 新模型</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        /* 此处样式与上一版本完全相同，因篇幅省略，但实际会包含全部样式 */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        :root {
-            --bg-sidebar: rgba(20, 20, 35, 0.95);
-            --bg-main: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --text-primary: #e5e5e5;
-            --text-secondary: rgba(255, 255, 255, 0.7);
-            --bubble-user: #3b82f6;
-            --bubble-assistant: rgba(255, 255, 255, 0.1);
-            --code-bg: rgba(0, 0, 0, 0.3);
-            --pre-bg: rgba(0, 0, 0, 0.4);
-            --hover-bg: rgba(255, 255, 255, 0.08);
-            --active-bg: rgba(139, 92, 246, 0.25);
-            --modal-bg: #1e1e2e;
-            --modal-text: #e0e0e0;
-        }
-        body.light {
-            --bg-sidebar: rgba(240, 240, 250, 0.95);
-            --bg-main: linear-gradient(135deg, #f0f2f5 0%, #e9ecef 100%);
-            --border-color: rgba(0, 0, 0, 0.1);
-            --text-primary: #1a1a2e;
-            --text-secondary: rgba(0, 0, 0, 0.6);
-            --bubble-user: #3b82f6;
-            --bubble-assistant: #e2e8f0;
-            --code-bg: rgba(0, 0, 0, 0.05);
-            --pre-bg: rgba(0, 0, 0, 0.08);
-            --hover-bg: rgba(0, 0, 0, 0.05);
-            --active-bg: rgba(139, 92, 246, 0.2);
-            --modal-bg: #ffffff;
-            --modal-text: #1a1a2e;
-        }
-        body {
-            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            background: #0f0f1a;
-            height: 100vh;
-            overflow: hidden;
-            transition: background 0.2s;
-        }
-        .app {
-            display: flex;
-            height: 100vh;
-            width: 100%;
-        }
-        .sidebar {
-            width: 280px;
-            background: var(--bg-sidebar);
-            backdrop-filter: blur(10px);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.2s ease;
-            z-index: 20;
-        }
-        .sidebar-header {
-            padding: 20px 16px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .new-chat-btn {
-            width: 100%;
-            padding: 10px;
-            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .sessions-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-        }
-        .session-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 12px;
-            margin-bottom: 4px;
-            border-radius: 10px;
-            cursor: pointer;
-            color: var(--text-primary);
-        }
+        /* 样式与之前完全一致，此处省略，实际会包含全部样式，但为了精简，我将在下方提供完整代码 */
+        * { margin:0; padding:0; box-sizing:border-box; }
+        :root { --bg-sidebar: rgba(20,20,35,0.95); --bg-main: linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); --border-color: rgba(255,255,255,0.1); --text-primary: #e5e5e5; --text-secondary: rgba(255,255,255,0.7); --bubble-user: #3b82f6; --bubble-assistant: rgba(255,255,255,0.1); --code-bg: rgba(0,0,0,0.3); --pre-bg: rgba(0,0,0,0.4); --hover-bg: rgba(255,255,255,0.08); --active-bg: rgba(139,92,246,0.25); --modal-bg: #1e1e2e; --modal-text: #e0e0e0; }
+        body.light { --bg-sidebar: rgba(240,240,250,0.95); --bg-main: linear-gradient(135deg,#f0f2f5 0%,#e9ecef 100%); --border-color: rgba(0,0,0,0.1); --text-primary: #1a1a2e; --text-secondary: rgba(0,0,0,0.6); --bubble-user: #3b82f6; --bubble-assistant: #e2e8f0; --code-bg: rgba(0,0,0,0.05); --pre-bg: rgba(0,0,0,0.08); --hover-bg: rgba(0,0,0,0.05); --active-bg: rgba(139,92,246,0.2); --modal-bg: #ffffff; --modal-text: #1a1a2e; }
+        body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0f0f1a; height: 100vh; overflow: hidden; transition: background 0.2s; }
+        .app { display: flex; height: 100vh; width: 100%; }
+        .sidebar { width: 280px; background: var(--bg-sidebar); backdrop-filter: blur(10px); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: transform 0.2s ease; z-index: 20; }
+        .sidebar-header { padding: 20px 16px; border-bottom: 1px solid var(--border-color); }
+        .new-chat-btn { width: 100%; padding: 10px; background: linear-gradient(135deg, #8b5cf6, #3b82f6); border: none; border-radius: 12px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .sessions-list { flex: 1; overflow-y: auto; padding: 12px; }
+        .session-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; margin-bottom: 4px; border-radius: 10px; cursor: pointer; color: var(--text-primary); }
         .session-item:hover { background: var(--hover-bg); }
         .session-item.active { background: var(--active-bg); color: white; }
-        .session-name {
-            flex: 1;
-            font-size: 0.85rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .session-actions {
-            display: flex;
-            gap: 6px;
-            opacity: 0;
-        }
+        .session-name { flex: 1; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .session-actions { display: flex; gap: 6px; opacity: 0; }
         .session-item:hover .session-actions { opacity: 1; }
-        .session-action {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            cursor: pointer;
-            font-size: 0.8rem;
-            padding: 4px;
-            border-radius: 6px;
-        }
-        .main {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background: var(--bg-main);
-            overflow: hidden;
-        }
-        .chat-header {
-            padding: 12px 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .chat-header h1 { 
-            font-size: 1.2rem; 
-            color: var(--text-primary);
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-        }
-        .menu-toggle { 
-            display: none; 
-            background: none; 
-            border: none; 
-            color: var(--text-primary); 
-            font-size: 1.5rem; 
-            cursor: pointer; 
-        }
-        .settings-btn {
-            background: none;
-            border: none;
-            font-size: 1.4rem;
-            cursor: pointer;
-            color: var(--text-primary);
-            padding: 6px 10px;
-            border-radius: 30px;
-            transition: background 0.2s;
-        }
-        .settings-btn:hover {
-            background: var(--hover-bg);
-        }
-        .messages-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-        .message-card {
-            display: flex;
-            gap: 12px;
-            animation: fadeIn 0.2s ease;
-        }
+        .session-action { background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 0.8rem; padding: 4px; border-radius: 6px; }
+        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); overflow: hidden; }
+        .chat-header { padding: 12px 20px; background: rgba(255,255,255,0.05); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; }
+        .chat-header h1 { font-size: 1.2rem; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+        .menu-toggle { display: none; background: none; border: none; color: var(--text-primary); font-size: 1.5rem; cursor: pointer; }
+        .settings-btn { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-primary); padding: 6px 10px; border-radius: 30px; transition: background 0.2s; }
+        .settings-btn:hover { background: var(--hover-bg); }
+        .messages-area { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 24px; }
+        .message-card { display: flex; gap: 12px; animation: fadeIn 0.2s ease; }
         .message-card.user { flex-direction: row-reverse; }
-        .message-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-            flex-shrink: 0;
-        }
+        .message-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
         .user .message-avatar { background: #3b82f6; }
         .assistant .message-avatar { background: #8b5cf6; }
-        .message-body {
-            max-width: 75%;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .bubble {
-            padding: 12px 16px;
-            border-radius: 20px;
-            line-height: 1.5;
-            font-size: 0.95rem;
-        }
-        .user .bubble {
-            background: var(--bubble-user);
-            color: white;
-            border-bottom-right-radius: 4px;
-        }
-        .assistant .bubble {
-            background: var(--bubble-assistant);
-            color: var(--text-primary);
-            border-bottom-left-radius: 4px;
-        }
-        .bubble.markdown-body {
-            background: var(--bubble-assistant);
-            padding: 12px 16px;
-        }
+        .message-body { max-width: 75%; display: flex; flex-direction: column; gap: 8px; }
+        .bubble { padding: 12px 16px; border-radius: 20px; line-height: 1.5; font-size: 0.95rem; }
+        .user .bubble { background: var(--bubble-user); color: white; border-bottom-right-radius: 4px; }
+        .assistant .bubble { background: var(--bubble-assistant); color: var(--text-primary); border-bottom-left-radius: 4px; }
+        .bubble.markdown-body { background: var(--bubble-assistant); padding: 12px 16px; }
         .bubble.markdown-body p { margin: 0.5em 0; }
         .bubble.markdown-body p:first-child { margin-top: 0; }
         .bubble.markdown-body p:last-child { margin-bottom: 0; }
-        .bubble.markdown-body code {
-            background: var(--code-bg);
-            padding: 2px 5px;
-            border-radius: 6px;
-            font-family: monospace;
-        }
-        .bubble.markdown-body pre {
-            background: var(--pre-bg);
-            padding: 10px;
-            border-radius: 8px;
-            overflow-x: auto;
-        }
-        .reasoning-container {
-            background: rgba(139, 92, 246, 0.15);
-            border-left: 3px solid #8b5cf6;
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-        .reasoning-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 14px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            color: #a78bfa;
-            user-select: none;
-        }
-        .reasoning-header .arrow {
-            transition: transform 0.2s;
-            display: inline-block;
-        }
-        .reasoning-header.collapsed .arrow {
-            transform: rotate(-90deg);
-        }
-        .reasoning-content {
-            padding: 12px 14px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            white-space: pre-wrap;
-            border-top: 1px solid rgba(139, 92, 246, 0.2);
-        }
-        .reasoning-content.hidden {
-            display: none;
-        }
-        .message-toolbar {
-            display: flex;
-            gap: 12px;
-            margin-top: 4px;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-        }
+        .bubble.markdown-body code { background: var(--code-bg); padding: 2px 5px; border-radius: 6px; font-family: monospace; }
+        .bubble.markdown-body pre { background: var(--pre-bg); padding: 10px; border-radius: 8px; overflow-x: auto; }
+        .reasoning-container { background: rgba(139,92,246,0.15); border-left: 3px solid #8b5cf6; border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
+        .reasoning-header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; cursor: pointer; font-size: 0.8rem; color: #a78bfa; user-select: none; }
+        .reasoning-header .arrow { transition: transform 0.2s; display: inline-block; }
+        .reasoning-header.collapsed .arrow { transform: rotate(-90deg); }
+        .reasoning-content { padding: 12px 14px; font-size: 0.8rem; color: var(--text-secondary); white-space: pre-wrap; border-top: 1px solid rgba(139,92,246,0.2); }
+        .reasoning-content.hidden { display: none; }
+        .message-toolbar { display: flex; gap: 12px; margin-top: 4px; opacity: 0.5; transition: opacity 0.2s; }
         .message-card:hover .message-toolbar { opacity: 1; }
-        .tool-btn {
-            background: none;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 0.7rem;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 16px;
-        }
-        .version-switcher {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 6px;
-            font-size: 0.7rem;
-        }
-        .version-btn {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: #ccc;
-            padding: 3px 8px;
-            border-radius: 16px;
-            cursor: pointer;
-        }
-        .version-btn.active {
-            background: #8b5cf6;
-            color: white;
-        }
-        .input-area {
-            padding: 16px 20px;
-            background: rgba(255, 255, 255, 0.05);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            gap: 12px;
-        }
-        .input-area textarea {
-            flex: 1;
-            padding: 12px 18px;
-            border-radius: 28px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            font-size: 0.95rem;
-            font-family: inherit;
-            resize: vertical;
-            outline: none;
-            min-height: 44px;
-            max-height: 150px;
-        }
-        .input-area button {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
-            border: none;
-            border-radius: 28px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .typing-indicator {
-            display: flex;
-            gap: 4px;
-            padding: 12px 16px;
-            background: var(--bubble-assistant);
-            border-radius: 20px;
-            width: fit-content;
-        }
-        .typing-indicator span {
-            width: 8px;
-            height: 8px;
-            background: #a78bfa;
-            border-radius: 50%;
-            animation: bounce 1.4s infinite;
-        }
-        @keyframes bounce {
-            0%,60%,100%{ transform: translateY(0); }
-            30%{ transform: translateY(-10px); }
-        }
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            visibility: hidden;
-            opacity: 0;
-            transition: 0.2s;
-        }
-        .modal-overlay.open {
-            visibility: visible;
-            opacity: 1;
-        }
-        .modal {
-            background: var(--modal-bg);
-            color: var(--modal-text);
-            border-radius: 24px;
-            width: 90%;
-            max-width: 480px;
-            max-height: 85vh;
-            overflow-y: auto;
-            padding: 20px;
-            box-shadow: 0 20px 35px rgba(0,0,0,0.3);
-        }
-        .modal h3 {
-            margin-bottom: 20px;
-            font-size: 1.3rem;
-        }
-        .modal-setting {
-            margin-bottom: 20px;
-        }
-        .modal-setting label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-        .modal-setting select, .modal-setting input {
-            width: 100%;
-            padding: 8px 12px;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-sidebar);
-            color: var(--modal-text);
-        }
-        .temp-slider {
-            width: 100%;
-        }
-        .theme-buttons, .font-buttons, .backup-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 5px;
-            flex-wrap: wrap;
-        }
-        .theme-btn, .font-btn, .backup-btn {
-            flex: 1;
-            padding: 8px;
-            border-radius: 40px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-sidebar);
-            color: var(--modal-text);
-            cursor: pointer;
-            text-align: center;
-            font-size: 0.8rem;
-        }
-        .theme-btn.active, .font-btn.active {
-            background: #8b5cf6;
-            color: white;
-            border-color: #8b5cf6;
-        }
-        .close-modal {
-            width: 100%;
-            margin-top: 20px;
-            padding: 10px;
-            background: #8b5cf6;
-            border: none;
-            border-radius: 40px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @media (max-width: 700px) {
-            .sidebar {
-                position: fixed;
-                left: 0;
-                top: 0;
-                height: 100%;
-                transform: translateX(-100%);
-                box-shadow: 2px 0 10px rgba(0,0,0,0.5);
-            }
-            .sidebar.open { transform: translateX(0); }
-            .menu-toggle { display: block; }
-            .message-body { max-width: 85%; }
-        }
+        .tool-btn { background: none; border: none; color: var(--text-secondary); font-size: 0.7rem; cursor: pointer; padding: 4px 8px; border-radius: 16px; }
+        .version-switcher { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 0.7rem; }
+        .version-btn { background: rgba(255,255,255,0.1); border: none; color: #ccc; padding: 3px 8px; border-radius: 16px; cursor: pointer; }
+        .version-btn.active { background: #8b5cf6; color: white; }
+        .input-area { padding: 16px 20px; background: rgba(255,255,255,0.05); border-top: 1px solid var(--border-color); display: flex; gap: 12px; }
+        .input-area textarea { flex: 1; padding: 12px 18px; border-radius: 28px; background: rgba(255,255,255,0.1); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.95rem; font-family: inherit; resize: vertical; outline: none; min-height: 44px; max-height: 150px; }
+        .input-area button { padding: 12px 24px; background: linear-gradient(135deg, #8b5cf6, #3b82f6); border: none; border-radius: 28px; color: white; font-weight: 600; cursor: pointer; }
+        .typing-indicator { display: flex; gap: 4px; padding: 12px 16px; background: var(--bubble-assistant); border-radius: 20px; width: fit-content; }
+        .typing-indicator span { width: 8px; height: 8px; background: #a78bfa; border-radius: 50%; animation: bounce 1.4s infinite; }
+        @keyframes bounce { 0%,60%,100%{ transform: translateY(0); } 30%{ transform: translateY(-10px); } }
+        .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index:100; display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; transition: 0.2s; }
+        .modal-overlay.open { visibility: visible; opacity: 1; }
+        .modal { background: var(--modal-bg); color: var(--modal-text); border-radius: 24px; width: 90%; max-width: 480px; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 35px rgba(0,0,0,0.3); }
+        .modal h3 { margin-bottom: 20px; font-size: 1.3rem; }
+        .modal-setting { margin-bottom: 20px; }
+        .modal-setting label { display: block; margin-bottom: 8px; font-weight: 500; }
+        .modal-setting select, .modal-setting input { width: 100%; padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--bg-sidebar); color: var(--modal-text); }
+        .temp-slider { width: 100%; }
+        .theme-buttons, .font-buttons, .backup-buttons { display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; }
+        .theme-btn, .font-btn, .backup-btn { flex: 1; padding: 8px; border-radius: 40px; border: 1px solid var(--border-color); background: var(--bg-sidebar); color: var(--modal-text); cursor: pointer; text-align: center; font-size: 0.8rem; }
+        .theme-btn.active, .font-btn.active { background: #8b5cf6; color: white; border-color: #8b5cf6; }
+        .close-modal { width: 100%; margin-top: 20px; padding: 10px; background: #8b5cf6; border: none; border-radius: 40px; color: white; font-weight: bold; cursor: pointer; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 700px) { .sidebar { position: fixed; left:0; top:0; height:100%; transform: translateX(-100%); box-shadow: 2px 0 10px rgba(0,0,0,0.5); } .sidebar.open { transform: translateX(0); } .menu-toggle { display: block; } .message-body { max-width: 85%; } }
     </style>
 </head>
 <body>
@@ -493,16 +116,11 @@
             <input type="range" id="modalTempSlider" class="temp-slider" min="0" max="2" step="0.1" value="1.5">
         </div>
         <div class="modal-setting">
-            <label>🧠 深度思考模式</label>
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <span>关闭</span>
-                <label class="toggle-switch-big" style="position: relative; display: inline-block; width: 50px; height: 24px;">
-                    <input type="checkbox" id="modalReasoningToggle" style="opacity:0; width:0; height:0;">
-                    <span style="position: absolute; cursor: pointer; top:0; left:0; right:0; bottom:0; background: #ccc; border-radius: 24px; transition: 0.2s;"></span>
-                    <span style="position: absolute; content:''; height: 20px; width: 20px; left: 2px; bottom: 2px; background: white; border-radius: 50%; transition: 0.2s;"></span>
-                </label>
-                <span>开启</span>
-            </div>
+            <label>🧠 模型</label>
+            <select id="modelSelect">
+                <option value="deepseek-v4-pro">deepseek-v4-pro（推理增强）</option>
+                <option value="deepseek-v4-flash">deepseek-v4-flash（快速响应）</option>
+            </select>
         </div>
         <div class="modal-setting">
             <label>📏 字号</label>
@@ -540,13 +158,12 @@
 </div>
 
 <script>
-    // ---------- 数据结构 ----------
     let sessions = [];
     let currentSessionId = null;
     let isWaiting = false;
-    let isReasoningMode = false;
     let backupIntervalId = null;
-    
+    let selectedModel = 'deepseek-v4-pro'; // 默认
+
     // DOM 元素
     const sidebar = document.getElementById('sidebar');
     const menuToggle = document.getElementById('menuToggle');
@@ -560,57 +177,32 @@
     const modalApiKey = document.getElementById('modalApiKey');
     const modalTempSlider = document.getElementById('modalTempSlider');
     const tempValueDisplay = document.getElementById('tempValueDisplay');
-    const modalReasoningToggle = document.getElementById('modalReasoningToggle');
+    const modelSelect = document.getElementById('modelSelect');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const backupIntervalSelect = document.getElementById('backupIntervalSelect');
     const manualBackupBtn = document.getElementById('manualBackupBtn');
     const restoreBackupBtn = document.getElementById('restoreBackupBtn');
     const exportFileBtn = document.getElementById('exportFileBtn');
     const importFileBtn = document.getElementById('importFileBtn');
-    
+
     let currentFont = 'medium';
     let currentTheme = 'dark';
-    
-    // 辅助函数
-    function generateId() {
-        return Date.now() + '-' + Math.random().toString(36).substr(2, 8);
-    }
-    
-    function escapeHtml(str) {
-        return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
-        });
-    }
-    
-    function renderMarkdown(text) {
-        if (!text) return '';
-        return marked.parse(text, { breaks: true, gfm: true });
-    }
-    
-    // 备份核心：保存当前会话数据到备份区
+
+    function generateId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 8); }
+    function escapeHtml(str) { return str.replace(/[&<>]/g, m => { if(m==='&')return '&amp;'; if(m==='<')return '&lt;'; if(m==='>')return '&gt;'; return m; }); }
+    function renderMarkdown(text) { if (!text) return ''; return marked.parse(text, { breaks: true, gfm: true }); }
+
+    // 备份
     function performBackup() {
         if (!sessions.length) return;
-        const backupData = {
-            sessions: sessions,
-            currentSessionId: currentSessionId,
-            timestamp: Date.now()
-        };
+        const backupData = { sessions, currentSessionId, timestamp: Date.now() };
         localStorage.setItem('deepseek_auto_backup', JSON.stringify(backupData));
-        console.log('自动备份已执行', new Date().toLocaleTimeString());
     }
-    
-    // 从备份恢复
     function restoreFromBackup() {
-        const backupRaw = localStorage.getItem('deepseek_auto_backup');
-        if (!backupRaw) {
-            alert('没有找到备份数据');
-            return;
-        }
+        const raw = localStorage.getItem('deepseek_auto_backup');
+        if (!raw) { alert('没有找到备份数据'); return; }
         try {
-            const backup = JSON.parse(backupRaw);
+            const backup = JSON.parse(raw);
             if (backup.sessions && backup.sessions.length) {
                 sessions = backup.sessions;
                 currentSessionId = backup.currentSessionId;
@@ -618,32 +210,19 @@
                 renderSessions();
                 renderMessages();
                 alert('已从备份恢复数据');
-            } else {
-                alert('备份数据无效');
-            }
-        } catch(e) {
-            alert('备份数据损坏');
-        }
+            } else alert('备份数据无效');
+        } catch(e) { alert('备份数据损坏'); }
     }
-    
-    // 导出文件 - 固定文件名，实现覆盖旧文件
     function exportToFile() {
-        const data = {
-            sessions: sessions,
-            currentSessionId: currentSessionId,
-            version: '1.0',
-            exportTime: Date.now()
-        };
+        const data = { sessions, currentSessionId, version: '1.0', exportTime: Date.now() };
         const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'deepseek_backup.json';   // 固定文件名，每次导出会提示覆盖
+        a.download = 'deepseek_backup.json';
         a.click();
         URL.revokeObjectURL(url);
     }
-    
-    // 导入文件
     function importFromFile() {
         const input = document.createElement('input');
         input.type = 'file';
@@ -662,38 +241,27 @@
                         renderSessions();
                         renderMessages();
                         alert('导入成功');
-                    } else {
-                        alert('文件格式不正确');
-                    }
-                } catch(err) {
-                    alert('解析失败');
-                }
+                    } else alert('文件格式不正确');
+                } catch(err) { alert('解析失败'); }
             };
             reader.readAsText(file);
         };
         input.click();
     }
-    
-    // 设置自动备份定时器
     function setupAutoBackup(intervalMinutes) {
         if (backupIntervalId) clearInterval(backupIntervalId);
         if (intervalMinutes > 0) {
-            backupIntervalId = setInterval(() => {
-                performBackup();
-            }, intervalMinutes * 60 * 1000);
-        } else {
-            backupIntervalId = null;
+            backupIntervalId = setInterval(performBackup, intervalMinutes * 60 * 1000);
         }
         localStorage.setItem('deepseek_backup_interval', intervalMinutes);
     }
-    
-    // 存储相关
+
+    // 存储
     function loadData() {
         const stored = localStorage.getItem('deepseek_branch_sessions');
         if (stored) {
             sessions = JSON.parse(stored);
         } else {
-            // 尝试从备份恢复
             const backupRaw = localStorage.getItem('deepseek_auto_backup');
             if (backupRaw) {
                 try {
@@ -704,75 +272,51 @@
                             currentSessionId = backup.currentSessionId;
                             saveSessions();
                         } else {
-                            sessions = [{
-                                id: generateId(),
-                                name: '新对话',
-                                messages: []
-                            }];
+                            sessions = [{ id: generateId(), name: '新对话', messages: [] }];
                         }
-                    } else {
-                        sessions = [{
-                            id: generateId(),
-                            name: '新对话',
-                            messages: []
-                        }];
-                    }
-                } catch(e) {
-                    sessions = [{
-                        id: generateId(),
-                        name: '新对话',
-                        messages: []
-                    }];
-                }
-            } else {
-                sessions = [{
-                    id: generateId(),
-                    name: '新对话',
-                    messages: []
-                }];
-            }
+                    } else sessions = [{ id: generateId(), name: '新对话', messages: [] }];
+                } catch(e) { sessions = [{ id: generateId(), name: '新对话', messages: [] }]; }
+            } else sessions = [{ id: generateId(), name: '新对话', messages: [] }];
         }
         const storedCurrent = localStorage.getItem('deepseek_branch_current');
         if (storedCurrent && sessions.find(s => s.id === storedCurrent)) {
             currentSessionId = storedCurrent;
-        } else {
-            currentSessionId = sessions[0].id;
-        }
-        
+        } else currentSessionId = sessions[0].id;
+
         const savedKey = localStorage.getItem('deepseek_api_key');
         if (savedKey) modalApiKey.value = savedKey;
         const savedTemp = localStorage.getItem('deepseek_temperature');
-        if (savedTemp) {
-            modalTempSlider.value = savedTemp;
-            tempValueDisplay.textContent = parseFloat(savedTemp).toFixed(1);
+        if (savedTemp) { modalTempSlider.value = savedTemp; tempValueDisplay.textContent = parseFloat(savedTemp).toFixed(1); }
+        const savedModel = localStorage.getItem('deepseek_model');
+        if (savedModel) {
+            modelSelect.value = savedModel;
+            selectedModel = savedModel;
+        } else {
+            modelSelect.value = 'deepseek-v4-pro';
+            selectedModel = 'deepseek-v4-pro';
         }
-        const savedReason = localStorage.getItem('deepseek_reasoning_mode');
-        isReasoningMode = savedReason === 'true';
-        modalReasoningToggle.checked = isReasoningMode;
         const savedFont = localStorage.getItem('deepseek_font_size');
         if (savedFont) setFontSize(savedFont);
         const savedTheme = localStorage.getItem('deepseek_theme');
         if (savedTheme) setTheme(savedTheme);
-        
-        // 设置备份间隔
+
         const savedInterval = localStorage.getItem('deepseek_backup_interval');
         let intervalValue = savedInterval ? parseInt(savedInterval) : 15;
         if (isNaN(intervalValue)) intervalValue = 15;
         backupIntervalSelect.value = intervalValue.toString();
         setupAutoBackup(intervalValue);
     }
-    
+
     function saveSessions() {
         localStorage.setItem('deepseek_branch_sessions', JSON.stringify(sessions));
         localStorage.setItem('deepseek_branch_current', currentSessionId);
     }
-    
     function saveSettings() {
         localStorage.setItem('deepseek_api_key', modalApiKey.value.trim());
         localStorage.setItem('deepseek_temperature', modalTempSlider.value);
-        localStorage.setItem('deepseek_reasoning_mode', isReasoningMode);
+        localStorage.setItem('deepseek_model', modelSelect.value);
+        selectedModel = modelSelect.value;
     }
-    
     function setFontSize(size) {
         currentFont = size;
         const root = document.documentElement;
@@ -788,22 +332,18 @@
             else btn.classList.remove('active');
         });
     }
-    
     function setTheme(theme) {
         currentTheme = theme;
-        if (theme === 'light') {
-            document.body.classList.add('light');
-        } else {
-            document.body.classList.remove('light');
-        }
+        if (theme === 'light') document.body.classList.add('light');
+        else document.body.classList.remove('light');
         localStorage.setItem('deepseek_theme', theme);
         document.querySelectorAll('.theme-btn').forEach(btn => {
             if (btn.dataset.theme === theme) btn.classList.add('active');
             else btn.classList.remove('active');
         });
     }
-    
-    // 会话管理函数
+
+    // 会话管理
     function renderSessions() {
         sessionsList.innerHTML = '';
         sessions.forEach(session => {
@@ -817,18 +357,11 @@
                 </div>
             `;
             div.querySelector('.session-name').addEventListener('click', () => switchSession(session.id));
-            div.querySelector('.rename').addEventListener('click', (e) => {
-                e.stopPropagation();
-                renameSession(session.id);
-            });
-            div.querySelector('.delete').addEventListener('click', (e) => {
-                e.stopPropagation();
-                deleteSession(session.id);
-            });
+            div.querySelector('.rename').addEventListener('click', (e) => { e.stopPropagation(); renameSession(session.id); });
+            div.querySelector('.delete').addEventListener('click', (e) => { e.stopPropagation(); deleteSession(session.id); });
             sessionsList.appendChild(div);
         });
     }
-    
     function switchSession(sessionId) {
         if (sessionId === currentSessionId) return;
         currentSessionId = sessionId;
@@ -836,7 +369,6 @@
         renderSessions();
         renderMessages();
     }
-    
     function renameSession(sessionId) {
         const session = sessions.find(s => s.id === sessionId);
         if (!session) return;
@@ -847,59 +379,27 @@
             renderSessions();
         }
     }
-    
     function deleteSession(sessionId) {
-        if (sessions.length === 1) {
-            alert('至少保留一个对话');
-            return;
-        }
+        if (sessions.length === 1) { alert('至少保留一个对话'); return; }
         if (confirm('删除后无法恢复，确定吗？')) {
             sessions = sessions.filter(s => s.id !== sessionId);
-            if (currentSessionId === sessionId) {
-                currentSessionId = sessions[0].id;
-            }
+            if (currentSessionId === sessionId) currentSessionId = sessions[0].id;
             saveSessions();
             renderSessions();
             renderMessages();
         }
     }
-    
     function newSession() {
         const newId = generateId();
-        sessions.push({
-            id: newId,
-            name: `新对话 ${sessions.length + 1}`,
-            messages: []
-        });
+        sessions.push({ id: newId, name: `新对话 ${sessions.length+1}`, messages: [] });
         currentSessionId = newId;
         saveSessions();
         renderSessions();
         renderMessages();
     }
-    
-    function getCurrentSession() {
-        return sessions.find(s => s.id === currentSessionId);
-    }
-    
-    async function editUserMessageWithBranch(msgIndex, newContent) {
-        const oldSession = getCurrentSession();
-        if (!oldSession) return;
-        const newId = generateId();
-        const newName = oldSession.name + ' - 分支';
-        const newMessages = oldSession.messages.slice(0, msgIndex + 1);
-        newMessages[msgIndex].content = newContent;
-        const newSession = {
-            id: newId,
-            name: newName,
-            messages: newMessages
-        };
-        sessions.push(newSession);
-        currentSessionId = newId;
-        saveSessions();
-        renderSessions();
-        await generateResponseForLastUserInSession(newSession);
-    }
-    
+    function getCurrentSession() { return sessions.find(s => s.id === currentSessionId); }
+
+    // API 调用核心
     async function generateResponseForLastUserInSession(session) {
         const userMessages = session.messages.filter(m => m.role === 'user');
         if (userMessages.length === 0) return;
@@ -911,7 +411,7 @@
         showTypingIndicator();
         try {
             const temperature = parseFloat(modalTempSlider.value);
-            const model = isReasoningMode ? 'deepseek-reasoner' : 'deepseek-chat';
+            const model = modelSelect.value; // 使用选择的模型
             const apiMessages = session.messages.map(m => ({ role: m.role, content: m.content }));
             const payload = {
                 model: model,
@@ -962,16 +462,13 @@
             messageInput.focus();
         }
     }
-    
+
     async function sendMessage() {
         const userInput = messageInput.value.trim();
         if (!userInput) return;
         if (isWaiting) return;
         const apiKey = modalApiKey.value.trim();
-        if (!apiKey) {
-            alert('请先输入 API Key');
-            return;
-        }
+        if (!apiKey) { alert('请先输入 API Key'); return; }
         const session = getCurrentSession();
         if (!session) return;
         session.messages.push({ role: 'user', content: userInput });
@@ -981,7 +478,7 @@
         messageInput.style.height = 'auto';
         await generateResponseForLastUserInSession(session);
     }
-    
+
     async function regenerateAssistant(msgIndex) {
         const session = getCurrentSession();
         if (!session) return;
@@ -998,7 +495,7 @@
         showTypingIndicator();
         try {
             const temperature = parseFloat(modalTempSlider.value);
-            const model = isReasoningMode ? 'deepseek-reasoner' : 'deepseek-chat';
+            const model = modelSelect.value;
             const apiMessages = truncatedHistory.map(m => ({ role: m.role, content: m.content }));
             const payload = {
                 model: model,
@@ -1037,7 +534,7 @@
             sendBtn.disabled = false;
         }
     }
-    
+
     function switchVersion(msgIndex, versionIdx) {
         const session = getCurrentSession();
         if (!session) return;
@@ -1049,22 +546,34 @@
         saveSessions();
         renderMessages();
     }
-    
+
+    async function editUserMessageWithBranch(msgIndex, newContent) {
+        const oldSession = getCurrentSession();
+        if (!oldSession) return;
+        const newId = generateId();
+        const newName = oldSession.name + ' - 分支';
+        const newMessages = oldSession.messages.slice(0, msgIndex + 1);
+        newMessages[msgIndex].content = newContent;
+        const newSession = { id: newId, name: newName, messages: newMessages };
+        sessions.push(newSession);
+        currentSessionId = newId;
+        saveSessions();
+        renderSessions();
+        await generateResponseForLastUserInSession(newSession);
+    }
+
+    // 渲染消息
     function renderMessages() {
         const session = getCurrentSession();
         if (!session) return;
         messagesArea.innerHTML = '';
         for (let i = 0; i < session.messages.length; i++) {
             const msg = session.messages[i];
-            if (msg.role === 'user') {
-                renderUserMessage(msg.content, i);
-            } else {
-                renderAssistantMessage(msg, i);
-            }
+            if (msg.role === 'user') renderUserMessage(msg.content, i);
+            else renderAssistantMessage(msg, i);
         }
         scrollToBottom();
     }
-    
     function renderUserMessage(content, index) {
         const card = document.createElement('div');
         card.className = 'message-card user';
@@ -1079,13 +588,10 @@
         `;
         card.querySelector('.edit-msg').addEventListener('click', async () => {
             const newContent = prompt('修改消息内容（将创建新分支）：', content);
-            if (newContent && newContent.trim()) {
-                await editUserMessageWithBranch(index, newContent.trim());
-            }
+            if (newContent && newContent.trim()) await editUserMessageWithBranch(index, newContent.trim());
         });
         messagesArea.appendChild(card);
     }
-    
     function renderAssistantMessage(msg, index) {
         const card = document.createElement('div');
         card.className = 'message-card assistant';
@@ -1103,13 +609,8 @@
             let collapsed = false;
             header.onclick = () => {
                 collapsed = !collapsed;
-                if (collapsed) {
-                    header.classList.add('collapsed');
-                    contentDiv.classList.add('hidden');
-                } else {
-                    header.classList.remove('collapsed');
-                    contentDiv.classList.remove('hidden');
-                }
+                if (collapsed) { header.classList.add('collapsed'); contentDiv.classList.add('hidden'); }
+                else { header.classList.remove('collapsed'); contentDiv.classList.remove('hidden'); }
             };
             reasoningDiv.appendChild(header);
             reasoningDiv.appendChild(contentDiv);
@@ -1118,9 +619,7 @@
         const bubble = document.createElement('div');
         bubble.className = 'bubble markdown-body';
         bubble.innerHTML = renderMarkdown(msg.content);
-        bubble.querySelectorAll('pre code').forEach((block) => {
-            hljs.highlightElement(block);
-        });
+        bubble.querySelectorAll('pre code').forEach(block => hljs.highlightElement(block));
         bodyDiv.appendChild(bubble);
         const toolbar = document.createElement('div');
         toolbar.className = 'message-toolbar';
@@ -1147,7 +646,7 @@
         card.appendChild(bodyDiv);
         messagesArea.appendChild(card);
     }
-    
+
     function showTypingIndicator() {
         const indicator = document.createElement('div');
         indicator.className = 'message-card assistant';
@@ -1156,117 +655,52 @@
         messagesArea.appendChild(indicator);
         scrollToBottom();
     }
-    
-    function hideTypingIndicator() {
-        const el = document.getElementById('typingIndicator');
-        if (el) el.remove();
-    }
-    
-    function scrollToBottom() {
-        messagesArea.scrollTop = messagesArea.scrollHeight;
-    }
-    
-    function autoResizeTextarea() {
-        messageInput.style.height = 'auto';
-        messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px';
-    }
-    
+    function hideTypingIndicator() { const el = document.getElementById('typingIndicator'); if (el) el.remove(); }
+    function scrollToBottom() { messagesArea.scrollTop = messagesArea.scrollHeight; }
+    function autoResizeTextarea() { messageInput.style.height = 'auto'; messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px'; }
+
+    // 模态框
     function openModal() {
         modalOverlay.classList.add('open');
         modalApiKey.value = localStorage.getItem('deepseek_api_key') || '';
         modalTempSlider.value = localStorage.getItem('deepseek_temperature') || '1.5';
         tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1);
-        modalReasoningToggle.checked = isReasoningMode;
-        const toggleSpan = document.querySelector('.toggle-switch-big span');
-        if (toggleSpan) {
-            if (modalReasoningToggle.checked) {
-                toggleSpan.style.background = '#8b5cf6';
-                toggleSpan.nextElementSibling.style.transform = 'translateX(26px)';
-            } else {
-                toggleSpan.style.background = '#ccc';
-                toggleSpan.nextElementSibling.style.transform = 'translateX(0)';
-            }
-        }
+        const savedModel = localStorage.getItem('deepseek_model') || 'deepseek-v4-pro';
+        modelSelect.value = savedModel;
     }
-    
     function closeModal() {
         modalOverlay.classList.remove('open');
-        const newKey = modalApiKey.value.trim();
-        const newTemp = parseFloat(modalTempSlider.value);
-        const newReason = modalReasoningToggle.checked;
-        localStorage.setItem('deepseek_api_key', newKey);
-        localStorage.setItem('deepseek_temperature', newTemp);
-        localStorage.setItem('deepseek_reasoning_mode', newReason);
-        isReasoningMode = newReason;
         saveSettings();
         const newInterval = parseInt(backupIntervalSelect.value);
         setupAutoBackup(newInterval);
         localStorage.setItem('deepseek_backup_interval', newInterval);
     }
-    
+
     // 事件绑定
-    newChatBtn.addEventListener('click', () => {
-        newSession();
-        if (window.innerWidth <= 700) sidebar.classList.remove('open');
-    });
+    newChatBtn.addEventListener('click', () => { newSession(); if (window.innerWidth <= 700) sidebar.classList.remove('open'); });
     menuToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
     sendBtn.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
+    messageInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
     messageInput.addEventListener('input', autoResizeTextarea);
     settingsBtn.addEventListener('click', openModal);
     closeModalBtn.addEventListener('click', closeModal);
-    modalOverlay.addEventListener('click', (e) => {
-        if (e.target === modalOverlay) closeModal();
-    });
-    modalTempSlider.addEventListener('input', () => {
-        tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1);
-    });
-    document.querySelectorAll('.font-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            setFontSize(btn.dataset.font);
-        });
-    });
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            setTheme(btn.dataset.theme);
-        });
-    });
-    modalReasoningToggle.addEventListener('change', () => {
-        const toggleSpan = document.querySelector('.toggle-switch-big span');
-        if (toggleSpan) {
-            if (modalReasoningToggle.checked) {
-                toggleSpan.style.background = '#8b5cf6';
-                toggleSpan.nextElementSibling.style.transform = 'translateX(26px)';
-            } else {
-                toggleSpan.style.background = '#ccc';
-                toggleSpan.nextElementSibling.style.transform = 'translateX(0)';
-            }
-        }
-    });
-    
-    manualBackupBtn.addEventListener('click', () => {
-        performBackup();
-        alert('已手动备份当前数据');
-    });
+    modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
+    modalTempSlider.addEventListener('input', () => { tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1); });
+    document.querySelectorAll('.font-btn').forEach(btn => { btn.addEventListener('click', () => setFontSize(btn.dataset.font)); });
+    document.querySelectorAll('.theme-btn').forEach(btn => { btn.addEventListener('click', () => setTheme(btn.dataset.theme)); });
+    manualBackupBtn.addEventListener('click', () => { performBackup(); alert('已手动备份当前数据'); });
     restoreBackupBtn.addEventListener('click', restoreFromBackup);
     exportFileBtn.addEventListener('click', exportToFile);
     importFileBtn.addEventListener('click', importFromFile);
-    
+
     // 初始化
     loadData();
     renderSessions();
     renderMessages();
-    
+
     document.addEventListener('click', (e) => {
         if (window.innerWidth <= 700 && sidebar.classList.contains('open')) {
-            if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
-                sidebar.classList.remove('open');
-            }
+            if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('open');
         }
     });
 </script>
