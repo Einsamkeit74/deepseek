@@ -3,15 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>DeepSeek 专业版 · 分支修复</title>
+    <title>DeepSeek 专业版 · 稳定修复</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        /* 样式与上一版本完全相同，此处省略，但在实际文件中必须包含完整样式 */
         * { margin:0; padding:0; box-sizing:border-box; }
-        :root { --bg-sidebar: rgba(20,20,35,0.95); --bg-main: linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); --border-color: rgba(255,255,255,0.1); --text-primary: #e5e5e5; --text-secondary: rgba(255,255,255,0.7); --bubble-user: #3b82f6; --bubble-assistant: rgba(255,255,255,0.1); --code-bg: rgba(0,0,0,0.3); --pre-bg: rgba(0,0,0,0.4); --hover-bg: rgba(255,255,255,0.08); --active-bg: rgba(139,92,246,0.25); --modal-bg: #1e1e2e; --modal-text: #e0e0e0; }
-        body.light { --bg-sidebar: rgba(240,240,250,0.95); --bg-main: linear-gradient(135deg,#f0f2f5 0%,#e9ecef 100%); --border-color: rgba(0,0,0,0.1); --text-primary: #1a1a2e; --text-secondary: rgba(0,0,0,0.6); --bubble-user: #3b82f6; --bubble-assistant: #e2e8f0; --code-bg: rgba(0,0,0,0.05); --pre-bg: rgba(0,0,0,0.08); --hover-bg: rgba(0,0,0,0.05); --active-bg: rgba(139,92,246,0.2); --modal-bg: #ffffff; --modal-text: #1a1a2e; }
+        :root {
+            --bg-sidebar: rgba(20,20,35,0.95);
+            --bg-main: linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);
+            --border-color: rgba(255,255,255,0.1);
+            --text-primary: #e5e5e5;
+            --text-secondary: rgba(255,255,255,0.7);
+            --bubble-user: #3b82f6;
+            --bubble-assistant: rgba(255,255,255,0.1);
+            --code-bg: rgba(0,0,0,0.3);
+            --pre-bg: rgba(0,0,0,0.4);
+            --hover-bg: rgba(255,255,255,0.08);
+            --active-bg: rgba(139,92,246,0.25);
+            --modal-bg: #1e1e2e;
+            --modal-text: #e0e0e0;
+        }
+        body.light {
+            --bg-sidebar: rgba(240,240,250,0.95);
+            --bg-main: linear-gradient(135deg,#f0f2f5 0%,#e9ecef 100%);
+            --border-color: rgba(0,0,0,0.1);
+            --text-primary: #1a1a2e;
+            --text-secondary: rgba(0,0,0,0.6);
+            --bubble-user: #3b82f6;
+            --bubble-assistant: #e2e8f0;
+            --code-bg: rgba(0,0,0,0.05);
+            --pre-bg: rgba(0,0,0,0.08);
+            --hover-bg: rgba(0,0,0,0.05);
+            --active-bg: rgba(139,92,246,0.2);
+            --modal-bg: #ffffff;
+            --modal-text: #1a1a2e;
+        }
         body { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background: #0f0f1a; height: 100vh; overflow: hidden; transition: background 0.2s; }
         .app { display: flex; height: 100vh; width: 100%; }
         .sidebar { width: 280px; background: var(--bg-sidebar); backdrop-filter: blur(10px); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: transform 0.2s ease; z-index: 20; }
@@ -80,6 +107,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 700px) { .sidebar { position: fixed; left:0; top:0; height:100%; transform: translateX(-100%); box-shadow: 2px 0 10px rgba(0,0,0,0.5); } .sidebar.open { transform: translateX(0); } .menu-toggle { display: block; } .message-body { max-width: 85%; } }
     </style>
+</head>
 <body>
 <div class="app">
     <div class="sidebar" id="sidebar">
@@ -157,14 +185,14 @@
 </div>
 
 <script>
-    // ---------- 数据结构 ----------
+    // ========== 全局状态 ==========
     let sessions = [];
     let currentSessionId = null;
     let isWaiting = false;
     let backupIntervalId = null;
     let selectedModel = 'deepseek-v4-pro';
 
-    // DOM 元素
+    // ========== DOM 引用 ==========
     const sidebar = document.getElementById('sidebar');
     const menuToggle = document.getElementById('menuToggle');
     const sessionsList = document.getElementById('sessionsList');
@@ -188,11 +216,24 @@
     let currentFont = 'medium';
     let currentTheme = 'dark';
 
+    // ========== 工具函数 ==========
     function generateId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 8); }
     function escapeHtml(str) { return str.replace(/[&<>]/g, m => { if(m==='&')return '&amp;'; if(m==='<')return '&lt;'; if(m==='>')return '&gt;'; return m; }); }
     function renderMarkdown(text) { if (!text) return ''; return marked.parse(text, { breaks: true, gfm: true }); }
 
-    // 备份
+    // ========== 存储操作 ==========
+    function saveSessions() {
+        localStorage.setItem('deepseek_branch_sessions', JSON.stringify(sessions));
+        localStorage.setItem('deepseek_branch_current', currentSessionId);
+    }
+    function saveSettings() {
+        localStorage.setItem('deepseek_api_key', modalApiKey.value.trim());
+        localStorage.setItem('deepseek_temperature', modalTempSlider.value);
+        localStorage.setItem('deepseek_model', modelSelect.value);
+        selectedModel = modelSelect.value;
+    }
+
+    // ========== 备份 ==========
     function performBackup() {
         if (!sessions.length) return;
         const backupData = { sessions, currentSessionId, timestamp: Date.now() };
@@ -223,8 +264,6 @@
         a.click();
         URL.revokeObjectURL(url);
     }
-
-    // ========== 改进的导入函数 ==========
     function importFromFile() {
         const input = document.createElement('input');
         input.type = 'file';
@@ -236,17 +275,13 @@
             reader.onload = (ev) => {
                 try {
                     let text = ev.target.result;
-                    if (text.charCodeAt(0) === 0xFEFF) {
-                        text = text.slice(1);
-                    }
+                    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
                     const imported = JSON.parse(text);
                     if (imported.sessions && Array.isArray(imported.sessions) && imported.sessions.length > 0) {
                         sessions = imported.sessions;
                         if (imported.currentSessionId && sessions.find(s => s.id === imported.currentSessionId)) {
                             currentSessionId = imported.currentSessionId;
-                        } else {
-                            currentSessionId = sessions[0].id;
-                        }
+                        } else currentSessionId = sessions[0].id;
                         saveSessions();
                         renderSessions();
                         renderMessages();
@@ -260,9 +295,7 @@
                             renderSessions();
                             renderMessages();
                             alert(`导入成功（自动识别 ${possibleKeys[0]}）！共 ${sessions.length} 个会话。`);
-                        } else {
-                            alert('文件格式不正确：未找到有效的会话数据。');
-                        }
+                        } else alert('文件格式不正确：未找到有效的会话数据。');
                     }
                 } catch(err) {
                     alert('解析失败：' + err.message);
@@ -272,7 +305,6 @@
         };
         input.click();
     }
-
     function setupAutoBackup(intervalMinutes) {
         if (backupIntervalId) clearInterval(backupIntervalId);
         if (intervalMinutes > 0) {
@@ -281,7 +313,7 @@
         localStorage.setItem('deepseek_backup_interval', intervalMinutes);
     }
 
-    // 存储
+    // ========== 加载数据 ==========
     function loadData() {
         const stored = localStorage.getItem('deepseek_branch_sessions');
         if (stored) {
@@ -296,9 +328,7 @@
                             sessions = backup.sessions;
                             currentSessionId = backup.currentSessionId;
                             saveSessions();
-                        } else {
-                            sessions = [{ id: generateId(), name: '新对话', messages: [] }];
-                        }
+                        } else sessions = [{ id: generateId(), name: '新对话', messages: [] }];
                     } else sessions = [{ id: generateId(), name: '新对话', messages: [] }];
                 } catch(e) { sessions = [{ id: generateId(), name: '新对话', messages: [] }]; }
             } else sessions = [{ id: generateId(), name: '新对话', messages: [] }];
@@ -331,22 +361,13 @@
         backupIntervalSelect.value = intervalValue.toString();
         setupAutoBackup(intervalValue);
 
-        // 强制重置状态，防止卡死
+        // 强制重置状态
         isWaiting = false;
         sendBtn.disabled = false;
         messageInput.disabled = false;
     }
 
-    function saveSessions() {
-        localStorage.setItem('deepseek_branch_sessions', JSON.stringify(sessions));
-        localStorage.setItem('deepseek_branch_current', currentSessionId);
-    }
-    function saveSettings() {
-        localStorage.setItem('deepseek_api_key', modalApiKey.value.trim());
-        localStorage.setItem('deepseek_temperature', modalTempSlider.value);
-        localStorage.setItem('deepseek_model', modelSelect.value);
-        selectedModel = modelSelect.value;
-    }
+    // ========== 主题/字号 ==========
     function setFontSize(size) {
         currentFont = size;
         const root = document.documentElement;
@@ -373,7 +394,7 @@
         });
     }
 
-    // 会话管理
+    // ========== 会话管理 ==========
     function renderSessions() {
         sessionsList.innerHTML = '';
         sessions.forEach(session => {
@@ -429,47 +450,7 @@
     }
     function getCurrentSession() { return sessions.find(s => s.id === currentSessionId); }
 
-    // ========== 修复后的编辑分支 ==========
-    async function editUserMessageWithBranch(msgIndex, newContent) {
-        // 如果 isWaiting 为 true，强制重置（避免卡住）
-        if (isWaiting) {
-            console.warn('isWaiting 被强制重置');
-            isWaiting = false;
-            sendBtn.disabled = false;
-            messageInput.disabled = false;
-            alert('检测到上一个操作未完成，已自动重置，请重试。');
-            return; // 让用户重新点击
-        }
-        const oldSession = getCurrentSession();
-        if (!oldSession) {
-            alert('当前会话不存在，请刷新页面');
-            return;
-        }
-        try {
-            // 创建新会话
-            const newId = generateId();
-            const newName = oldSession.name + ' - 分支';
-            const newMessages = oldSession.messages.slice(0, msgIndex + 1);
-            newMessages[msgIndex].content = newContent;
-            const newSession = {
-                id: newId,
-                name: newName,
-                messages: newMessages
-            };
-            sessions.push(newSession);
-            currentSessionId = newId;
-            saveSessions();
-            renderSessions();   // 立即更新侧边栏
-            renderMessages();   // 显示新会话（尚无回复）
-            // 开始生成回复
-            await generateResponseForLastUserInSession(newSession);
-        } catch (error) {
-            alert('创建分支失败：' + error.message);
-            console.error(error);
-        }
-    }
-
-    // 生成回复
+    // ========== API 调用 ==========
     async function generateResponseForLastUserInSession(session) {
         const userMessages = session.messages.filter(m => m.role === 'user');
         if (userMessages.length === 0) return;
@@ -536,7 +517,7 @@
         }
     }
 
-    // 发送消息
+    // ========== 发送消息 ==========
     async function sendMessage() {
         const userInput = messageInput.value.trim();
         if (!userInput) return;
@@ -553,6 +534,7 @@
         await generateResponseForLastUserInSession(session);
     }
 
+    // ========== 重新生成 ==========
     async function regenerateAssistant(msgIndex) {
         const session = getCurrentSession();
         if (!session) return;
@@ -621,7 +603,46 @@
         renderMessages();
     }
 
-    // 渲染消息
+    // ========== 编辑分支（核心修复） ==========
+    async function editUserMessageWithBranch(msgIndex, newContent) {
+        // 强制重置卡死的状态
+        if (isWaiting) {
+            console.warn('检测到 isWaiting 为 true，强制重置');
+            isWaiting = false;
+            sendBtn.disabled = false;
+            messageInput.disabled = false;
+            // 不弹 alert，让用户继续操作
+        }
+        const oldSession = getCurrentSession();
+        if (!oldSession) {
+            alert('当前会话不存在，请刷新页面');
+            return;
+        }
+        try {
+            // 创建新会话
+            const newId = generateId();
+            const newName = oldSession.name + ' - 分支';
+            const newMessages = oldSession.messages.slice(0, msgIndex + 1);
+            newMessages[msgIndex].content = newContent;
+            const newSession = {
+                id: newId,
+                name: newName,
+                messages: newMessages
+            };
+            sessions.push(newSession);
+            currentSessionId = newId;
+            saveSessions();
+            renderSessions();   // 立即更新侧边栏
+            renderMessages();   // 显示新会话（尚无回复）
+            // 开始生成回复
+            await generateResponseForLastUserInSession(newSession);
+        } catch (error) {
+            alert('创建分支失败：' + error.message);
+            console.error(error);
+        }
+    }
+
+    // ========== 渲染消息 ==========
     function renderMessages() {
         const session = getCurrentSession();
         if (!session) return;
@@ -706,6 +727,7 @@
         messagesArea.appendChild(card);
     }
 
+    // ========== UI 辅助 ==========
     function showTypingIndicator() {
         const indicator = document.createElement('div');
         indicator.className = 'message-card assistant';
@@ -718,7 +740,7 @@
     function scrollToBottom() { messagesArea.scrollTop = messagesArea.scrollHeight; }
     function autoResizeTextarea() { messageInput.style.height = 'auto'; messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px'; }
 
-    // 模态框
+    // ========== 模态框 ==========
     function openModal() {
         modalOverlay.classList.add('open');
         modalApiKey.value = localStorage.getItem('deepseek_api_key') || '';
@@ -735,7 +757,7 @@
         localStorage.setItem('deepseek_backup_interval', newInterval);
     }
 
-    // 事件绑定
+    // ========== 事件绑定 ==========
     newChatBtn.addEventListener('click', () => { newSession(); if (window.innerWidth <= 700) sidebar.classList.remove('open'); });
     menuToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
     sendBtn.addEventListener('click', sendMessage);
@@ -752,7 +774,7 @@
     exportFileBtn.addEventListener('click', exportToFile);
     importFileBtn.addEventListener('click', importFromFile);
 
-    // 初始化
+    // ========== 启动 ==========
     loadData();
     renderSessions();
     renderMessages();
