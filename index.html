@@ -223,9 +223,88 @@
 
     // ========== 存储操作 ==========
     function saveSessions() {
+    try {
         localStorage.setItem('deepseek_branch_sessions', JSON.stringify(sessions));
         localStorage.setItem('deepseek_branch_current', currentSessionId);
+    } catch (e) {
+        if (e.name === 'QuotaExceededError' || e.code === 22) {
+            alert('存储空间已满，请选择需要导出的对话（导出后可选删除），释放空间。');
+            showExportSelection(); // 弹出选择对话框
+        } else {
+            throw e;
+        }
     }
+}
+    function showExportSelection() {
+    // 列出所有会话
+    let msg = '当前会话列表：\n';
+    sessions.forEach((s, i) => {
+        msg += `[${i+1}] ${s.name} (${s.messages.length}条消息)\n`;
+    });
+    msg += '\n请输入要导出的会话编号（多个用逗号分隔），例如：1,3,5\n输入 0 取消导出。';
+    const input = prompt(msg);
+    if (input === null || input.trim() === '0') {
+        alert('已取消，请稍后手动导出清理。');
+        return;
+    }
+    const indices = input.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
+    if (indices.length === 0) {
+        alert('无效输入，请重试。');
+        return;
+    }
+    // 获取要导出的会话
+    const toExport = [];
+    const toKeep = [];
+    sessions.forEach((s, i) => {
+        if (indices.includes(i+1)) {
+            toExport.push(s);
+        } else {
+            toKeep.push(s);
+        }
+    });
+    if (toExport.length === 0) {
+        alert('没有选中任何会话。');
+        return;
+    }
+    // 导出文件
+    const exportData = {
+        sessions: toExport,
+        version: '1.0',
+        exportTime: Date.now()
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `exported_sessions_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    // 询问是否删除
+    if (confirm('文件已导出，是否立即删除这些选中的会话以释放空间？\n（如果选择“取消”，则只导出文件，不删除会话）')) {
+        sessions = toKeep;
+        // 重置当前会话 ID
+        if (!sessions.find(s => s.id === currentSessionId)) {
+            currentSessionId = sessions.length > 0 ? sessions[0].id : null;
+            if (!currentSessionId) {
+                const newId = generateId();
+                sessions = [{ id: newId, name: '新对话', messages: [] }];
+                currentSessionId = newId;
+            }
+        }
+        // 重新保存
+        try {
+            localStorage.setItem('deepseek_branch_sessions', JSON.stringify(sessions));
+            localStorage.setItem('deepseek_branch_current', currentSessionId);
+            alert('导出并删除成功，存储空间已释放。');
+            renderSessions();
+            renderMessages();
+        } catch (e2) {
+            alert('存储空间依然不足，请手动清理浏览器数据或使用其他浏览器。');
+        }
+    } else {
+        alert('已取消删除，请稍后手动处理。');
+    }
+}
     function saveSettings() {
         localStorage.setItem('deepseek_api_key', modalApiKey.value.trim());
         localStorage.setItem('deepseek_temperature', modalTempSlider.value);
