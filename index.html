@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>DeepSeek 专业版 · 新模型</title>
+    <title>DeepSeek 专业版 · 分支修复</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        /* 样式与之前完全一致，此处省略，实际会包含全部样式，但为了精简，我将在下方提供完整代码 */
+        /* 样式与上一版本完全相同，此处省略，但在实际文件中必须包含完整样式 */
         * { margin:0; padding:0; box-sizing:border-box; }
         :root { --bg-sidebar: rgba(20,20,35,0.95); --bg-main: linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); --border-color: rgba(255,255,255,0.1); --text-primary: #e5e5e5; --text-secondary: rgba(255,255,255,0.7); --bubble-user: #3b82f6; --bubble-assistant: rgba(255,255,255,0.1); --code-bg: rgba(0,0,0,0.3); --pre-bg: rgba(0,0,0,0.4); --hover-bg: rgba(255,255,255,0.08); --active-bg: rgba(139,92,246,0.25); --modal-bg: #1e1e2e; --modal-text: #e0e0e0; }
         body.light { --bg-sidebar: rgba(240,240,250,0.95); --bg-main: linear-gradient(135deg,#f0f2f5 0%,#e9ecef 100%); --border-color: rgba(0,0,0,0.1); --text-primary: #1a1a2e; --text-secondary: rgba(0,0,0,0.6); --bubble-user: #3b82f6; --bubble-assistant: #e2e8f0; --code-bg: rgba(0,0,0,0.05); --pre-bg: rgba(0,0,0,0.08); --hover-bg: rgba(0,0,0,0.05); --active-bg: rgba(139,92,246,0.2); --modal-bg: #ffffff; --modal-text: #1a1a2e; }
@@ -162,7 +162,7 @@
     let currentSessionId = null;
     let isWaiting = false;
     let backupIntervalId = null;
-    let selectedModel = 'deepseek-v4-pro'; // 默认
+    let selectedModel = 'deepseek-v4-pro';
 
     // DOM 元素
     const sidebar = document.getElementById('sidebar');
@@ -399,19 +399,49 @@
     }
     function getCurrentSession() { return sessions.find(s => s.id === currentSessionId); }
 
-    // API 调用核心
+    // ---------- 核心修改：编辑分支，添加等待检查 ----------
+    async function editUserMessageWithBranch(msgIndex, newContent) {
+        if (isWaiting) {
+            alert('请等待当前操作完成后再试');
+            return;
+        }
+        const oldSession = getCurrentSession();
+        if (!oldSession) return;
+        // 创建新会话
+        const newId = generateId();
+        const newName = oldSession.name + ' - 分支';
+        const newMessages = oldSession.messages.slice(0, msgIndex + 1);
+        newMessages[msgIndex].content = newContent;
+        const newSession = {
+            id: newId,
+            name: newName,
+            messages: newMessages
+        };
+        sessions.push(newSession);
+        currentSessionId = newId;
+        saveSessions();
+        renderSessions();
+        renderMessages(); // 立刻显示新的消息（尚未有回复）
+        // 异步生成回复
+        await generateResponseForLastUserInSession(newSession);
+    }
+
+    // 生成回复函数（保持不变，但确保错误处理）
     async function generateResponseForLastUserInSession(session) {
         const userMessages = session.messages.filter(m => m.role === 'user');
         if (userMessages.length === 0) return;
         const apiKey = modalApiKey.value.trim();
-        if (!apiKey) { alert('请先输入 API Key'); return; }
+        if (!apiKey) {
+            alert('请先输入 API Key');
+            return;
+        }
         isWaiting = true;
         sendBtn.disabled = true;
         messageInput.disabled = true;
         showTypingIndicator();
         try {
             const temperature = parseFloat(modalTempSlider.value);
-            const model = modelSelect.value; // 使用选择的模型
+            const model = modelSelect.value;
             const apiMessages = session.messages.map(m => ({ role: m.role, content: m.content }));
             const payload = {
                 model: model,
@@ -463,6 +493,7 @@
         }
     }
 
+    // 发送消息（与之前相同）
     async function sendMessage() {
         const userInput = messageInput.value.trim();
         if (!userInput) return;
@@ -547,22 +578,7 @@
         renderMessages();
     }
 
-    async function editUserMessageWithBranch(msgIndex, newContent) {
-        const oldSession = getCurrentSession();
-        if (!oldSession) return;
-        const newId = generateId();
-        const newName = oldSession.name + ' - 分支';
-        const newMessages = oldSession.messages.slice(0, msgIndex + 1);
-        newMessages[msgIndex].content = newContent;
-        const newSession = { id: newId, name: newName, messages: newMessages };
-        sessions.push(newSession);
-        currentSessionId = newId;
-        saveSessions();
-        renderSessions();
-        await generateResponseForLastUserInSession(newSession);
-    }
-
-    // 渲染消息
+    // 渲染消息（与之前相同）
     function renderMessages() {
         const session = getCurrentSession();
         if (!session) return;
