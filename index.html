@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>DeepSeek 专业版 · 分支修复加强</title>
+    <title>DeepSeek 专业版 · 分支修复</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <style>
-        /* ---------- 样式与之前完全一致，此处保留完整 ---------- */
+        /* 样式与上一版本完全相同，此处省略，但在实际文件中必须包含完整样式 */
         * { margin:0; padding:0; box-sizing:border-box; }
         :root { --bg-sidebar: rgba(20,20,35,0.95); --bg-main: linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); --border-color: rgba(255,255,255,0.1); --text-primary: #e5e5e5; --text-secondary: rgba(255,255,255,0.7); --bubble-user: #3b82f6; --bubble-assistant: rgba(255,255,255,0.1); --code-bg: rgba(0,0,0,0.3); --pre-bg: rgba(0,0,0,0.4); --hover-bg: rgba(255,255,255,0.08); --active-bg: rgba(139,92,246,0.25); --modal-bg: #1e1e2e; --modal-text: #e0e0e0; }
         body.light { --bg-sidebar: rgba(240,240,250,0.95); --bg-main: linear-gradient(135deg,#f0f2f5 0%,#e9ecef 100%); --border-color: rgba(0,0,0,0.1); --text-primary: #1a1a2e; --text-secondary: rgba(0,0,0,0.6); --bubble-user: #3b82f6; --bubble-assistant: #e2e8f0; --code-bg: rgba(0,0,0,0.05); --pre-bg: rgba(0,0,0,0.08); --hover-bg: rgba(0,0,0,0.05); --active-bg: rgba(139,92,246,0.2); --modal-bg: #ffffff; --modal-text: #1a1a2e; }
@@ -79,25 +79,7 @@
         .close-modal { width: 100%; margin-top: 20px; padding: 10px; background: #8b5cf6; border: none; border-radius: 40px; color: white; font-weight: bold; cursor: pointer; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @media (max-width: 700px) { .sidebar { position: fixed; left:0; top:0; height:100%; transform: translateX(-100%); box-shadow: 2px 0 10px rgba(0,0,0,0.5); } .sidebar.open { transform: translateX(0); } .menu-toggle { display: block; } .message-body { max-width: 85%; } }
-        /* 通知提示 */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-size: 0.9rem;
-            z-index: 200;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-        .toast.show { opacity: 1; }
     </style>
-</head>
 <body>
 <div class="app">
     <div class="sidebar" id="sidebar">
@@ -119,8 +101,6 @@
         </div>
     </div>
 </div>
-<!-- Toast 通知 -->
-<div class="toast" id="toast"></div>
 
 <!-- 设置模态框 -->
 <div class="modal-overlay" id="modalOverlay">
@@ -204,24 +184,15 @@
     const restoreBackupBtn = document.getElementById('restoreBackupBtn');
     const exportFileBtn = document.getElementById('exportFileBtn');
     const importFileBtn = document.getElementById('importFileBtn');
-    const toast = document.getElementById('toast');
 
     let currentFont = 'medium';
     let currentTheme = 'dark';
 
-    // ---------- 工具函数 ----------
     function generateId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 8); }
     function escapeHtml(str) { return str.replace(/[&<>]/g, m => { if(m==='&')return '&amp;'; if(m==='<')return '&lt;'; if(m==='>')return '&gt;'; return m; }); }
     function renderMarkdown(text) { if (!text) return ''; return marked.parse(text, { breaks: true, gfm: true }); }
 
-    // 显示通知
-    function showToast(msg) {
-        toast.textContent = msg;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3000);
-    }
-
-    // ---------- 备份 ----------
+    // 备份
     function performBackup() {
         if (!sessions.length) return;
         const backupData = { sessions, currentSessionId, timestamp: Date.now() };
@@ -229,7 +200,7 @@
     }
     function restoreFromBackup() {
         const raw = localStorage.getItem('deepseek_auto_backup');
-        if (!raw) { showToast('没有找到备份数据'); return; }
+        if (!raw) { alert('没有找到备份数据'); return; }
         try {
             const backup = JSON.parse(raw);
             if (backup.sessions && backup.sessions.length) {
@@ -238,9 +209,9 @@
                 saveSessions();
                 renderSessions();
                 renderMessages();
-                showToast('已从备份恢复数据');
-            } else showToast('备份数据无效');
-        } catch(e) { showToast('备份数据损坏'); }
+                alert('已从备份恢复数据');
+            } else alert('备份数据无效');
+        } catch(e) { alert('备份数据损坏: ' + e.message); }
     }
     function exportToFile() {
         const data = { sessions, currentSessionId, version: '1.0', exportTime: Date.now() };
@@ -251,8 +222,9 @@
         a.download = 'deepseek_backup.json';
         a.click();
         URL.revokeObjectURL(url);
-        showToast('导出成功');
     }
+
+    // ========== 改进的导入函数 ==========
     function importFromFile() {
         const input = document.createElement('input');
         input.type = 'file';
@@ -263,21 +235,44 @@
             const reader = new FileReader();
             reader.onload = (ev) => {
                 try {
-                    const imported = JSON.parse(ev.target.result);
-                    if (imported.sessions && imported.sessions.length) {
+                    let text = ev.target.result;
+                    if (text.charCodeAt(0) === 0xFEFF) {
+                        text = text.slice(1);
+                    }
+                    const imported = JSON.parse(text);
+                    if (imported.sessions && Array.isArray(imported.sessions) && imported.sessions.length > 0) {
                         sessions = imported.sessions;
-                        currentSessionId = imported.currentSessionId || sessions[0].id;
+                        if (imported.currentSessionId && sessions.find(s => s.id === imported.currentSessionId)) {
+                            currentSessionId = imported.currentSessionId;
+                        } else {
+                            currentSessionId = sessions[0].id;
+                        }
                         saveSessions();
                         renderSessions();
                         renderMessages();
-                        showToast('导入成功');
-                    } else showToast('文件格式不正确');
-                } catch(err) { showToast('解析失败'); }
+                        alert(`导入成功！共 ${sessions.length} 个会话。`);
+                    } else {
+                        const possibleKeys = Object.keys(imported).filter(k => Array.isArray(imported[k]) && imported[k].length > 0 && imported[k][0].messages);
+                        if (possibleKeys.length > 0) {
+                            sessions = imported[possibleKeys[0]];
+                            currentSessionId = sessions[0].id;
+                            saveSessions();
+                            renderSessions();
+                            renderMessages();
+                            alert(`导入成功（自动识别 ${possibleKeys[0]}）！共 ${sessions.length} 个会话。`);
+                        } else {
+                            alert('文件格式不正确：未找到有效的会话数据。');
+                        }
+                    }
+                } catch(err) {
+                    alert('解析失败：' + err.message);
+                }
             };
             reader.readAsText(file);
         };
         input.click();
     }
+
     function setupAutoBackup(intervalMinutes) {
         if (backupIntervalId) clearInterval(backupIntervalId);
         if (intervalMinutes > 0) {
@@ -286,7 +281,7 @@
         localStorage.setItem('deepseek_backup_interval', intervalMinutes);
     }
 
-    // ---------- 存储 ----------
+    // 存储
     function loadData() {
         const stored = localStorage.getItem('deepseek_branch_sessions');
         if (stored) {
@@ -335,6 +330,11 @@
         if (isNaN(intervalValue)) intervalValue = 15;
         backupIntervalSelect.value = intervalValue.toString();
         setupAutoBackup(intervalValue);
+
+        // 强制重置状态，防止卡死
+        isWaiting = false;
+        sendBtn.disabled = false;
+        messageInput.disabled = false;
     }
 
     function saveSessions() {
@@ -373,7 +373,7 @@
         });
     }
 
-    // ---------- 会话管理 ----------
+    // 会话管理
     function renderSessions() {
         sessionsList.innerHTML = '';
         sessions.forEach(session => {
@@ -391,9 +391,6 @@
             div.querySelector('.delete').addEventListener('click', (e) => { e.stopPropagation(); deleteSession(session.id); });
             sessionsList.appendChild(div);
         });
-        // 滚动到当前会话
-        const activeItem = sessionsList.querySelector('.session-item.active');
-        if (activeItem) activeItem.scrollIntoView({ block: 'center' });
     }
     function switchSession(sessionId) {
         if (sessionId === currentSessionId) return;
@@ -413,14 +410,13 @@
         }
     }
     function deleteSession(sessionId) {
-        if (sessions.length === 1) { showToast('至少保留一个对话'); return; }
+        if (sessions.length === 1) { alert('至少保留一个对话'); return; }
         if (confirm('删除后无法恢复，确定吗？')) {
             sessions = sessions.filter(s => s.id !== sessionId);
             if (currentSessionId === sessionId) currentSessionId = sessions[0].id;
             saveSessions();
             renderSessions();
             renderMessages();
-            showToast('已删除');
         }
     }
     function newSession() {
@@ -430,60 +426,56 @@
         saveSessions();
         renderSessions();
         renderMessages();
-        showToast('已创建新对话');
     }
     function getCurrentSession() { return sessions.find(s => s.id === currentSessionId); }
 
-    // ---------- 分支创建（核心修复） ----------
+    // ========== 修复后的编辑分支 ==========
     async function editUserMessageWithBranch(msgIndex, newContent) {
+        // 如果 isWaiting 为 true，强制重置（避免卡住）
+        if (isWaiting) {
+            console.warn('isWaiting 被强制重置');
+            isWaiting = false;
+            sendBtn.disabled = false;
+            messageInput.disabled = false;
+            alert('检测到上一个操作未完成，已自动重置，请重试。');
+            return; // 让用户重新点击
+        }
         const oldSession = getCurrentSession();
-        if (!oldSession) { showToast('未找到当前会话'); return; }
-        if (!newContent || !newContent.trim()) { showToast('内容不能为空'); return; }
-
-        // 1. 创建新会话
-        const newId = generateId();
-        const newName = oldSession.name + ' - 分支';
-        const newMessages = oldSession.messages.slice(0, msgIndex + 1);
-        newMessages[msgIndex].content = newContent.trim();
-        const newSession = { id: newId, name: newName, messages: newMessages };
-        sessions.push(newSession);
-        currentSessionId = newId;
-
-        // 2. 立即保存并刷新界面
-        saveSessions();
-        renderSessions();
-        renderMessages();
-        showToast('✅ 分支已创建，正在生成回复...');
-
-        // 3. 生成回复（异步，不阻塞界面）
+        if (!oldSession) {
+            alert('当前会话不存在，请刷新页面');
+            return;
+        }
         try {
-            await generateResponseForLastUserInSession(newSession);
-            showToast('✅ 分支回复已生成');
-        } catch (error) {
-            console.error('生成回复错误:', error);
-            // 即使出错，也添加错误消息
-            newSession.messages.push({
-                role: 'assistant',
-                content: `❌ 生成回复失败：${error.message}`,
-                reasoning: null
-            });
+            // 创建新会话
+            const newId = generateId();
+            const newName = oldSession.name + ' - 分支';
+            const newMessages = oldSession.messages.slice(0, msgIndex + 1);
+            newMessages[msgIndex].content = newContent;
+            const newSession = {
+                id: newId,
+                name: newName,
+                messages: newMessages
+            };
+            sessions.push(newSession);
+            currentSessionId = newId;
             saveSessions();
-            renderMessages();
-            showToast('⚠️ 回复生成失败，请检查 API Key 或网络');
-        } finally {
-            renderSessions(); // 确保侧边栏高亮当前会话
+            renderSessions();   // 立即更新侧边栏
+            renderMessages();   // 显示新会话（尚无回复）
+            // 开始生成回复
+            await generateResponseForLastUserInSession(newSession);
+        } catch (error) {
+            alert('创建分支失败：' + error.message);
+            console.error(error);
         }
     }
 
-    // ---------- API 调用 ----------
+    // 生成回复
     async function generateResponseForLastUserInSession(session) {
         const userMessages = session.messages.filter(m => m.role === 'user');
         if (userMessages.length === 0) return;
         const apiKey = modalApiKey.value.trim();
         if (!apiKey) {
-            session.messages.push({ role: 'assistant', content: '⚠️ 请先输入 API Key', reasoning: null });
-            saveSessions();
-            renderMessages();
+            alert('请先输入 API Key');
             return;
         }
         isWaiting = true;
@@ -492,7 +484,7 @@
         showTypingIndicator();
         try {
             const temperature = parseFloat(modalTempSlider.value);
-            const model = modelSelect.value || 'deepseek-v4-pro';
+            const model = modelSelect.value;
             const apiMessages = session.messages.map(m => ({ role: m.role, content: m.content }));
             const payload = {
                 model: model,
@@ -536,7 +528,6 @@
             });
             saveSessions();
             renderMessages();
-            throw error; // 向上传递错误
         } finally {
             isWaiting = false;
             sendBtn.disabled = false;
@@ -545,16 +536,13 @@
         }
     }
 
-    // 发送新消息
+    // 发送消息
     async function sendMessage() {
         const userInput = messageInput.value.trim();
         if (!userInput) return;
         if (isWaiting) return;
         const apiKey = modalApiKey.value.trim();
-        if (!apiKey) {
-            alert('请先输入 API Key');
-            return;
-        }
+        if (!apiKey) { alert('请先输入 API Key'); return; }
         const session = getCurrentSession();
         if (!session) return;
         session.messages.push({ role: 'user', content: userInput });
@@ -565,7 +553,6 @@
         await generateResponseForLastUserInSession(session);
     }
 
-    // 重新生成
     async function regenerateAssistant(msgIndex) {
         const session = getCurrentSession();
         if (!session) return;
@@ -582,7 +569,7 @@
         showTypingIndicator();
         try {
             const temperature = parseFloat(modalTempSlider.value);
-            const model = modelSelect.value || 'deepseek-v4-pro';
+            const model = modelSelect.value;
             const apiMessages = truncatedHistory.map(m => ({ role: m.role, content: m.content }));
             const payload = {
                 model: model,
@@ -613,7 +600,6 @@
             saveSessions();
             hideTypingIndicator();
             renderMessages();
-            showToast('已生成新版本');
         } catch (error) {
             hideTypingIndicator();
             alert('重新生成失败：' + error.message);
@@ -633,10 +619,9 @@
         msg.reasoning = msg.versions[versionIdx].reasoning;
         saveSessions();
         renderMessages();
-        showToast(`切换到版本 ${versionIdx+1}`);
     }
 
-    // ---------- 渲染消息 ----------
+    // 渲染消息
     function renderMessages() {
         const session = getCurrentSession();
         if (!session) return;
@@ -660,16 +645,10 @@
                 </div>
             </div>
         `;
-        // 直接绑定 onclick 确保可靠
-        card.querySelector('.edit-msg').onclick = async function() {
-            const currentContent = content;
-            const newContent = prompt('修改消息内容（将创建新分支）：', currentContent);
-            if (newContent !== null && newContent.trim() !== '') {
-                await editUserMessageWithBranch(index, newContent.trim());
-            } else if (newContent !== null) {
-                showToast('内容为空，未创建分支');
-            }
-        };
+        card.querySelector('.edit-msg').addEventListener('click', async () => {
+            const newContent = prompt('修改消息内容（将创建新分支）：', content);
+            if (newContent && newContent.trim()) await editUserMessageWithBranch(index, newContent.trim());
+        });
         messagesArea.appendChild(card);
     }
     function renderAssistantMessage(msg, index) {
@@ -739,7 +718,7 @@
     function scrollToBottom() { messagesArea.scrollTop = messagesArea.scrollHeight; }
     function autoResizeTextarea() { messageInput.style.height = 'auto'; messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px'; }
 
-    // ---------- 模态框 ----------
+    // 模态框
     function openModal() {
         modalOverlay.classList.add('open');
         modalApiKey.value = localStorage.getItem('deepseek_api_key') || '';
@@ -754,10 +733,9 @@
         const newInterval = parseInt(backupIntervalSelect.value);
         setupAutoBackup(newInterval);
         localStorage.setItem('deepseek_backup_interval', newInterval);
-        showToast('设置已保存');
     }
 
-    // ---------- 事件绑定 ----------
+    // 事件绑定
     newChatBtn.addEventListener('click', () => { newSession(); if (window.innerWidth <= 700) sidebar.classList.remove('open'); });
     menuToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
     sendBtn.addEventListener('click', sendMessage);
@@ -769,7 +747,7 @@
     modalTempSlider.addEventListener('input', () => { tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1); });
     document.querySelectorAll('.font-btn').forEach(btn => { btn.addEventListener('click', () => setFontSize(btn.dataset.font)); });
     document.querySelectorAll('.theme-btn').forEach(btn => { btn.addEventListener('click', () => setTheme(btn.dataset.theme)); });
-    manualBackupBtn.addEventListener('click', () => { performBackup(); showToast('已手动备份'); });
+    manualBackupBtn.addEventListener('click', () => { performBackup(); alert('已手动备份当前数据'); });
     restoreBackupBtn.addEventListener('click', restoreFromBackup);
     exportFileBtn.addEventListener('click', exportToFile);
     importFileBtn.addEventListener('click', importFromFile);
@@ -779,7 +757,6 @@
     renderSessions();
     renderMessages();
 
-    // 手机侧边栏关闭
     document.addEventListener('click', (e) => {
         if (window.innerWidth <= 700 && sidebar.classList.contains('open')) {
             if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) sidebar.classList.remove('open');
