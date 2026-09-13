@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>DeepSeek 专业版 · 稳定修复</title>
+    <title>AI 多模型助手 · DeepSeek / Kimi / Grok</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
@@ -94,12 +94,13 @@
         @keyframes bounce { 0%,60%,100%{ transform: translateY(0); } 30%{ transform: translateY(-10px); } }
         .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index:100; display: flex; align-items: center; justify-content: center; visibility: hidden; opacity: 0; transition: 0.2s; }
         .modal-overlay.open { visibility: visible; opacity: 1; }
-        .modal { background: var(--modal-bg); color: var(--modal-text); border-radius: 24px; width: 90%; max-width: 480px; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 35px rgba(0,0,0,0.3); }
+        .modal { background: var(--modal-bg); color: var(--modal-text); border-radius: 24px; width: 90%; max-width: 520px; max-height: 85vh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 35px rgba(0,0,0,0.3); }
         .modal h3 { margin-bottom: 20px; font-size: 1.3rem; }
-        .modal-setting { margin-bottom: 20px; }
-        .modal-setting label { display: block; margin-bottom: 8px; font-weight: 500; }
+        .modal-setting { margin-bottom: 18px; }
+        .modal-setting label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.85rem; }
         .modal-setting select, .modal-setting input { width: 100%; padding: 8px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--bg-sidebar); color: var(--modal-text); }
         .temp-slider { width: 100%; }
+        .provider-hint { font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px; }
         .theme-buttons, .font-buttons, .backup-buttons { display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; }
         .theme-btn, .font-btn, .backup-btn { flex: 1; padding: 8px; border-radius: 40px; border: 1px solid var(--border-color); background: var(--bg-sidebar); color: var(--modal-text); cursor: pointer; text-align: center; font-size: 0.8rem; }
         .theme-btn.active, .font-btn.active { background: #8b5cf6; color: white; border-color: #8b5cf6; }
@@ -119,7 +120,7 @@
     <div class="main">
         <div class="chat-header">
             <button class="menu-toggle" id="menuToggle">☰</button>
-            <h1>DeepSeek 专业版</h1>
+            <h1>AI 多模型助手</h1>
             <button class="settings-btn" id="settingsBtn">⚙️</button>
         </div>
         <div class="messages-area" id="messagesArea"></div>
@@ -134,21 +135,38 @@
 <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
         <h3>⚙️ 设置</h3>
+
+        <div class="modal-setting">
+            <label>🔌 API 提供商</label>
+            <select id="providerSelect">
+                <option value="deepseek">DeepSeek</option>
+                <option value="kimi">Kimi (Moonshot)</option>
+                <option value="grok">Grok (xAI)</option>
+            </select>
+        </div>
+
         <div class="modal-setting">
             <label>🔑 API Key</label>
             <input type="password" id="modalApiKey" placeholder="sk-xxxxxxxx">
         </div>
-        <div class="modal-setting">
-            <label>🌡️ 温度 <span id="tempValueDisplay">1.5</span></label>
-            <input type="range" id="modalTempSlider" class="temp-slider" min="0" max="2" step="0.1" value="1.5">
+
+        <div class="modal-setting" id="grokProxySetting" style="display:none;">
+            <label>🌐 Grok 代理地址</label>
+            <input type="text" id="grokProxyInput" placeholder="https://你的worker.workers.dev">
+            <div class="provider-hint">Grok 官方端点不支持浏览器跨域，需先部署 Cloudflare Worker 代理（代码见文末）</div>
         </div>
+
         <div class="modal-setting">
             <label>🧠 模型</label>
-            <select id="modelSelect">
-                <option value="deepseek-v4-pro">deepseek-v4-pro（推理增强）</option>
-                <option value="deepseek-v4-flash">deepseek-v4-flash（快速响应）</option>
-            </select>
+            <select id="modelSelect"></select>
         </div>
+
+        <div class="modal-setting" id="temperatureSetting">
+            <label>🌡️ 温度 <span id="tempValueDisplay">1.0</span></label>
+            <input type="range" id="modalTempSlider" class="temp-slider" min="0" max="2" step="0.1" value="1.0">
+            <div class="provider-hint" id="tempHint"></div>
+        </div>
+
         <div class="modal-setting">
             <label>📏 字号</label>
             <div class="font-buttons">
@@ -158,6 +176,7 @@
                 <div class="font-btn" data-font="xlarge">特大</div>
             </div>
         </div>
+
         <div class="modal-setting">
             <label>🎨 主题</label>
             <div class="theme-buttons">
@@ -165,6 +184,7 @@
                 <div class="theme-btn" data-theme="light">浅色</div>
             </div>
         </div>
+
         <div class="modal-setting">
             <label>💾 自动备份间隔</label>
             <select id="backupIntervalSelect">
@@ -174,25 +194,67 @@
                 <option value="30">每 30 分钟</option>
             </select>
         </div>
+
         <div class="backup-buttons">
             <div class="backup-btn" id="manualBackupBtn">立即备份</div>
             <div class="backup-btn" id="restoreBackupBtn">从备份恢复</div>
             <div class="backup-btn" id="exportFileBtn">导出文件</div>
             <div class="backup-btn" id="importFileBtn">导入文件</div>
         </div>
+
         <button class="close-modal" id="closeModalBtn">关闭</button>
     </div>
 </div>
 
 <script>
-    // ========== 全局状态 ==========
+    // ============================================================
+    // 1. 提供商配置表
+    // ============================================================
+    const PROVIDERS = {
+        deepseek: {
+            name: 'DeepSeek',
+            endpoint: 'https://api.deepseek.com/v1/chat/completions',
+            models: ['deepseek-v4-pro', 'deepseek-v4-flash'],
+            supportsTemperature: true,
+            temperatureRange: [0, 2],
+            defaultTemperature: 1.0,
+            hint: 'DeepSeek 支持自定义温度（0-2）',
+            getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
+        },
+        kimi: {
+            name: 'Kimi (Moonshot)',
+            endpoint: 'https://api.moonshot.ai/v1/chat/completions',
+            models: ['kimi-k3'],
+            supportsTemperature: false,
+            temperatureRange: [0, 2],
+            defaultTemperature: 1.0,
+            hint: 'Kimi K3 不支持自定义温度，参数将被忽略[reference:6]',
+            getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
+        },
+        grok: {
+            name: 'Grok (xAI)',
+            endpoint: 'https://api.x.ai/v1/chat/completions',
+            models: ['grok-4.6'],
+            supportsTemperature: true,
+            temperatureRange: [0, 2],
+            defaultTemperature: 1.0,
+            hint: 'Grok 支持自定义温度（0-2，默认约1.0）[reference:7]',
+            getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
+        }
+    };
+
+    // ============================================================
+    // 2. 全局状态
+    // ============================================================
     let sessions = [];
     let currentSessionId = null;
     let isWaiting = false;
     let backupIntervalId = null;
-    let selectedModel = 'deepseek-v4-pro';
+    let selectedProvider = 'deepseek';
 
-    // ========== DOM 引用 ==========
+    // ============================================================
+    // 3. DOM 引用
+    // ============================================================
     const sidebar = document.getElementById('sidebar');
     const menuToggle = document.getElementById('menuToggle');
     const sessionsList = document.getElementById('sessionsList');
@@ -202,10 +264,15 @@
     const sendBtn = document.getElementById('sendBtn');
     const settingsBtn = document.getElementById('settingsBtn');
     const modalOverlay = document.getElementById('modalOverlay');
+    const providerSelect = document.getElementById('providerSelect');
     const modalApiKey = document.getElementById('modalApiKey');
+    const grokProxySetting = document.getElementById('grokProxySetting');
+    const grokProxyInput = document.getElementById('grokProxyInput');
+    const modelSelect = document.getElementById('modelSelect');
+    const temperatureSetting = document.getElementById('temperatureSetting');
     const modalTempSlider = document.getElementById('modalTempSlider');
     const tempValueDisplay = document.getElementById('tempValueDisplay');
-    const modelSelect = document.getElementById('modelSelect');
+    const tempHint = document.getElementById('tempHint');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const backupIntervalSelect = document.getElementById('backupIntervalSelect');
     const manualBackupBtn = document.getElementById('manualBackupBtn');
@@ -216,108 +283,147 @@
     let currentFont = 'medium';
     let currentTheme = 'dark';
 
-    // ========== 工具函数 ==========
+    // ============================================================
+    // 4. 工具函数
+    // ============================================================
     function generateId() { return Date.now() + '-' + Math.random().toString(36).substr(2, 8); }
     function escapeHtml(str) { return str.replace(/[&<>]/g, m => { if(m==='&')return '&amp;'; if(m==='<')return '&lt;'; if(m==='>')return '&gt;'; return m; }); }
     function renderMarkdown(text) { if (!text) return ''; return marked.parse(text, { breaks: true, gfm: true }); }
 
-    // ========== 存储操作 ==========
+    // ============================================================
+    // 5. 提供商 UI 更新
+    // ============================================================
+    function updateProviderUI() {
+        const cfg = PROVIDERS[selectedProvider];
+        // 更新模型下拉框
+        modelSelect.innerHTML = '';
+        cfg.models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = m;
+            modelSelect.appendChild(opt);
+        });
+        // 恢复之前选择的模型（如果存在）
+        const savedModel = localStorage.getItem('ai_model_' + selectedProvider);
+        if (savedModel && cfg.models.includes(savedModel)) {
+            modelSelect.value = savedModel;
+        } else {
+            modelSelect.value = cfg.models[0];
+        }
+        // 温度设置
+        if (cfg.supportsTemperature) {
+            temperatureSetting.style.display = 'block';
+            modalTempSlider.min = cfg.temperatureRange[0];
+            modalTempSlider.max = cfg.temperatureRange[1];
+            const savedTemp = localStorage.getItem('ai_temperature_' + selectedProvider);
+            modalTempSlider.value = savedTemp ? parseFloat(savedTemp) : cfg.defaultTemperature;
+            tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1);
+            tempHint.textContent = cfg.hint;
+        } else {
+            temperatureSetting.style.display = 'none';
+            tempHint.textContent = cfg.hint;
+        }
+        // Grok 代理设置
+        grokProxySetting.style.display = selectedProvider === 'grok' ? 'block' : 'none';
+        // 更新 API Key 占位提示
+        modalApiKey.placeholder = selectedProvider === 'grok' ? 'xai-xxxxxxxx' : 'sk-xxxxxxxx';
+        // 更新 API Key 值
+        modalApiKey.value = localStorage.getItem('ai_api_key_' + selectedProvider) || '';
+    }
+
+    // ============================================================
+    // 6. 存储操作
+    // ============================================================
     function saveSessions() {
-    try {
-        localStorage.setItem('deepseek_branch_sessions', JSON.stringify(sessions));
-        localStorage.setItem('deepseek_branch_current', currentSessionId);
-    } catch (e) {
-        if (e.name === 'QuotaExceededError' || e.code === 22) {
-            alert('存储空间已满，请选择需要导出的对话（导出后可选删除），释放空间。');
-            showExportSelection(); // 弹出选择对话框
-        } else {
-            throw e;
-        }
-    }
-}
-    function showExportSelection() {
-    // 列出所有会话
-    let msg = '当前会话列表：\n';
-    sessions.forEach((s, i) => {
-        msg += `[${i+1}] ${s.name} (${s.messages.length}条消息)\n`;
-    });
-    msg += '\n请输入要导出的会话编号（多个用逗号分隔），例如：1,3,5\n输入 0 取消导出。';
-    const input = prompt(msg);
-    if (input === null || input.trim() === '0') {
-        alert('已取消，请稍后手动导出清理。');
-        return;
-    }
-    const indices = input.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
-    if (indices.length === 0) {
-        alert('无效输入，请重试。');
-        return;
-    }
-    // 获取要导出的会话
-    const toExport = [];
-    const toKeep = [];
-    sessions.forEach((s, i) => {
-        if (indices.includes(i+1)) {
-            toExport.push(s);
-        } else {
-            toKeep.push(s);
-        }
-    });
-    if (toExport.length === 0) {
-        alert('没有选中任何会话。');
-        return;
-    }
-    // 导出文件
-    const exportData = {
-        sessions: toExport,
-        version: '1.0',
-        exportTime: Date.now()
-    };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `exported_sessions_${new Date().toISOString().slice(0,10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    // 询问是否删除
-    if (confirm('文件已导出，是否立即删除这些选中的会话以释放空间？\n（如果选择“取消”，则只导出文件，不删除会话）')) {
-        sessions = toKeep;
-        // 重置当前会话 ID
-        if (!sessions.find(s => s.id === currentSessionId)) {
-            currentSessionId = sessions.length > 0 ? sessions[0].id : null;
-            if (!currentSessionId) {
-                const newId = generateId();
-                sessions = [{ id: newId, name: '新对话', messages: [] }];
-                currentSessionId = newId;
-            }
-        }
-        // 重新保存
         try {
             localStorage.setItem('deepseek_branch_sessions', JSON.stringify(sessions));
             localStorage.setItem('deepseek_branch_current', currentSessionId);
-            alert('导出并删除成功，存储空间已释放。');
-            renderSessions();
-            renderMessages();
-        } catch (e2) {
-            alert('存储空间依然不足，请手动清理浏览器数据或使用其他浏览器。');
+        } catch (e) {
+            if (e.name === 'QuotaExceededError' || e.code === 22) {
+                alert('存储空间已满，请选择需要导出的对话（导出后可选删除），释放空间。');
+                showExportSelection();
+            } else {
+                throw e;
+            }
         }
-    } else {
-        alert('已取消删除，请稍后手动处理。');
-    }
-}
-    function saveSettings() {
-        localStorage.setItem('deepseek_api_key', modalApiKey.value.trim());
-        localStorage.setItem('deepseek_temperature', modalTempSlider.value);
-        localStorage.setItem('deepseek_model', modelSelect.value);
-        selectedModel = modelSelect.value;
     }
 
-    // ========== 备份 ==========
+    function saveSettings() {
+        localStorage.setItem('ai_provider', selectedProvider);
+        localStorage.setItem('ai_api_key_' + selectedProvider, modalApiKey.value.trim());
+        localStorage.setItem('ai_model_' + selectedProvider, modelSelect.value);
+        if (PROVIDERS[selectedProvider].supportsTemperature) {
+            localStorage.setItem('ai_temperature_' + selectedProvider, modalTempSlider.value);
+        }
+        if (selectedProvider === 'grok') {
+            localStorage.setItem('ai_grok_proxy', grokProxyInput.value.trim());
+        }
+    }
+
+    // ============================================================
+    // 7. 空间不足处理（带导出选择）
+    // ============================================================
+    function showExportSelection() {
+        let msg = '当前会话列表：\n';
+        sessions.forEach((s, i) => {
+            msg += `[${i+1}] ${s.name} (${s.messages.length}条消息)\n`;
+        });
+        msg += '\n请输入要导出的会话编号（多个用逗号分隔），例如：1,3,5\n输入 0 取消导出。';
+        const input = prompt(msg);
+        if (input === null || input.trim() === '0') {
+            alert('已取消，请稍后手动导出清理。');
+            return;
+        }
+        const indices = input.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
+        if (indices.length === 0) { alert('无效输入，请重试。'); return; }
+        const toExport = [];
+        const toKeep = [];
+        sessions.forEach((s, i) => {
+            if (indices.includes(i+1)) toExport.push(s);
+            else toKeep.push(s);
+        });
+        if (toExport.length === 0) { alert('没有选中任何会话。'); return; }
+        const exportData = { sessions: toExport, version: '1.0', exportTime: Date.now() };
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `exported_sessions_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        if (confirm('文件已导出，是否立即删除这些选中的会话以释放空间？\n（选择“取消”则只导出文件，不删除）')) {
+            sessions = toKeep;
+            if (!sessions.find(s => s.id === currentSessionId)) {
+                currentSessionId = sessions.length > 0 ? sessions[0].id : null;
+                if (!currentSessionId) {
+                    const newId = generateId();
+                    sessions = [{ id: newId, name: '新对话', messages: [] }];
+                    currentSessionId = newId;
+                }
+            }
+            try {
+                localStorage.setItem('deepseek_branch_sessions', JSON.stringify(sessions));
+                localStorage.setItem('deepseek_branch_current', currentSessionId);
+                alert('导出并删除成功，存储空间已释放。');
+                renderSessions();
+                renderMessages();
+            } catch (e2) {
+                alert('存储空间依然不足，请手动清理浏览器数据。');
+            }
+        } else {
+            alert('已取消删除，请稍后手动处理。');
+        }
+    }
+
+    // ============================================================
+    // 8. 备份
+    // ============================================================
     function performBackup() {
         if (!sessions.length) return;
         const backupData = { sessions, currentSessionId, timestamp: Date.now() };
         localStorage.setItem('deepseek_auto_backup', JSON.stringify(backupData));
     }
+
     function restoreFromBackup() {
         const raw = localStorage.getItem('deepseek_auto_backup');
         if (!raw) { alert('没有找到备份数据'); return; }
@@ -333,6 +439,7 @@
             } else alert('备份数据无效');
         } catch(e) { alert('备份数据损坏: ' + e.message); }
     }
+
     function exportToFile() {
         const data = { sessions, currentSessionId, version: '1.0', exportTime: Date.now() };
         const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
@@ -343,6 +450,7 @@
         a.click();
         URL.revokeObjectURL(url);
     }
+
     function importFromFile() {
         const input = document.createElement('input');
         input.type = 'file';
@@ -358,9 +466,8 @@
                     const imported = JSON.parse(text);
                     if (imported.sessions && Array.isArray(imported.sessions) && imported.sessions.length > 0) {
                         sessions = imported.sessions;
-                        if (imported.currentSessionId && sessions.find(s => s.id === imported.currentSessionId)) {
-                            currentSessionId = imported.currentSessionId;
-                        } else currentSessionId = sessions[0].id;
+                        currentSessionId = imported.currentSessionId && sessions.find(s => s.id === imported.currentSessionId)
+                            ? imported.currentSessionId : sessions[0].id;
                         saveSessions();
                         renderSessions();
                         renderMessages();
@@ -376,24 +483,34 @@
                             alert(`导入成功（自动识别 ${possibleKeys[0]}）！共 ${sessions.length} 个会话。`);
                         } else alert('文件格式不正确：未找到有效的会话数据。');
                     }
-                } catch(err) {
-                    alert('解析失败：' + err.message);
-                }
+                } catch(err) { alert('解析失败：' + err.message); }
             };
             reader.readAsText(file);
         };
         input.click();
     }
+
     function setupAutoBackup(intervalMinutes) {
         if (backupIntervalId) clearInterval(backupIntervalId);
-        if (intervalMinutes > 0) {
-            backupIntervalId = setInterval(performBackup, intervalMinutes * 60 * 1000);
-        }
+        if (intervalMinutes > 0) backupIntervalId = setInterval(performBackup, intervalMinutes * 60 * 1000);
         localStorage.setItem('deepseek_backup_interval', intervalMinutes);
     }
 
-    // ========== 加载数据 ==========
+    // ============================================================
+    // 9. 加载数据
+    // ============================================================
     function loadData() {
+        // 加载提供商
+        const savedProvider = localStorage.getItem('ai_provider');
+        if (savedProvider && PROVIDERS[savedProvider]) {
+            selectedProvider = savedProvider;
+        }
+        providerSelect.value = selectedProvider;
+
+        // 加载 Grok 代理地址
+        grokProxyInput.value = localStorage.getItem('ai_grok_proxy') || '';
+
+        // 加载会话
         const stored = localStorage.getItem('deepseek_branch_sessions');
         if (stored) {
             sessions = JSON.parse(stored);
@@ -417,36 +534,31 @@
             currentSessionId = storedCurrent;
         } else currentSessionId = sessions[0].id;
 
-        const savedKey = localStorage.getItem('deepseek_api_key');
-        if (savedKey) modalApiKey.value = savedKey;
-        const savedTemp = localStorage.getItem('deepseek_temperature');
-        if (savedTemp) { modalTempSlider.value = savedTemp; tempValueDisplay.textContent = parseFloat(savedTemp).toFixed(1); }
-        const savedModel = localStorage.getItem('deepseek_model');
-        if (savedModel) {
-            modelSelect.value = savedModel;
-            selectedModel = savedModel;
-        } else {
-            modelSelect.value = 'deepseek-v4-pro';
-            selectedModel = 'deepseek-v4-pro';
-        }
+        // 加载字号主题
         const savedFont = localStorage.getItem('deepseek_font_size');
         if (savedFont) setFontSize(savedFont);
         const savedTheme = localStorage.getItem('deepseek_theme');
         if (savedTheme) setTheme(savedTheme);
 
+        // 加载备份间隔
         const savedInterval = localStorage.getItem('deepseek_backup_interval');
         let intervalValue = savedInterval ? parseInt(savedInterval) : 15;
         if (isNaN(intervalValue)) intervalValue = 15;
         backupIntervalSelect.value = intervalValue.toString();
         setupAutoBackup(intervalValue);
 
-        // 强制重置状态
+        // 更新提供商 UI
+        updateProviderUI();
+
+        // 重置状态
         isWaiting = false;
         sendBtn.disabled = false;
         messageInput.disabled = false;
     }
 
-    // ========== 主题/字号 ==========
+    // ============================================================
+    // 10. 主题/字号
+    // ============================================================
     function setFontSize(size) {
         currentFont = size;
         const root = document.documentElement;
@@ -462,6 +574,7 @@
             else btn.classList.remove('active');
         });
     }
+
     function setTheme(theme) {
         currentTheme = theme;
         if (theme === 'light') document.body.classList.add('light');
@@ -473,7 +586,9 @@
         });
     }
 
-    // ========== 会话管理 ==========
+    // ============================================================
+    // 11. 会话管理
+    // ============================================================
     function renderSessions() {
         sessionsList.innerHTML = '';
         sessions.forEach(session => {
@@ -492,6 +607,7 @@
             sessionsList.appendChild(div);
         });
     }
+
     function switchSession(sessionId) {
         if (sessionId === currentSessionId) return;
         currentSessionId = sessionId;
@@ -499,6 +615,7 @@
         renderSessions();
         renderMessages();
     }
+
     function renameSession(sessionId) {
         const session = sessions.find(s => s.id === sessionId);
         if (!session) return;
@@ -509,6 +626,7 @@
             renderSessions();
         }
     }
+
     function deleteSession(sessionId) {
         if (sessions.length === 1) { alert('至少保留一个对话'); return; }
         if (confirm('删除后无法恢复，确定吗？')) {
@@ -519,6 +637,7 @@
             renderMessages();
         }
     }
+
     function newSession() {
         const newId = generateId();
         sessions.push({ id: newId, name: `新对话 ${sessions.length+1}`, messages: [] });
@@ -527,52 +646,79 @@
         renderSessions();
         renderMessages();
     }
+
     function getCurrentSession() { return sessions.find(s => s.id === currentSessionId); }
 
-    // ========== API 调用 ==========
+    // ============================================================
+    // 12. API 调用核心（多提供商适配）
+    // ============================================================
+    async function callAPI(session) {
+        const cfg = PROVIDERS[selectedProvider];
+        const apiKey = modalApiKey.value.trim();
+        if (!apiKey) {
+            alert('请先在设置中填写 API Key');
+            return false;
+        }
+        // 构建请求体
+        const payload = {
+            model: modelSelect.value,
+            messages: cfg.getMessages(session.messages),
+            max_tokens: 4096,
+            stream: false
+        };
+        // 只有支持温度时才传入
+        if (cfg.supportsTemperature) {
+            payload.temperature = parseFloat(modalTempSlider.value);
+        }
+        // 确定请求地址
+        let endpoint = cfg.endpoint;
+        if (selectedProvider === 'grok') {
+            const proxy = grokProxyInput.value.trim();
+            if (!proxy) {
+                alert('Grok 需要代理地址，请在设置中填写 Cloudflare Worker 地址');
+                return false;
+            }
+            // 代理格式：https://worker.workers.dev/?target=...
+            endpoint = proxy.replace(/\/$/, '') + '/?target=' + encodeURIComponent(cfg.endpoint);
+        }
+        // 发起请求
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error?.message || err.error || `请求失败 ${response.status}`);
+        }
+        const data = await response.json();
+        const assistantMsg = data.choices[0].message;
+        return {
+            content: assistantMsg.content,
+            reasoning: assistantMsg.reasoning_content || null
+        };
+    }
+
+    // ============================================================
+    // 13. 生成回复
+    // ============================================================
     async function generateResponseForLastUserInSession(session) {
         const userMessages = session.messages.filter(m => m.role === 'user');
         if (userMessages.length === 0) return;
-        const apiKey = modalApiKey.value.trim();
-        if (!apiKey) {
-            alert('请先输入 API Key');
-            return;
-        }
         isWaiting = true;
         sendBtn.disabled = true;
         messageInput.disabled = true;
         showTypingIndicator();
         try {
-            const temperature = parseFloat(modalTempSlider.value);
-            const model = modelSelect.value;
-            const apiMessages = session.messages.map(m => ({ role: m.role, content: m.content }));
-            const payload = {
-                model: model,
-                messages: apiMessages,
-                temperature: temperature,
-                max_tokens: 4096,
-                stream: false
-            };
-            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify(payload)
-            });
-            if (!response.ok) {
-                const err = await response.json().catch(() => ({}));
-                throw new Error(err.error?.message || `请求失败 ${response.status}`);
-            }
-            const data = await response.json();
-            const assistantMsg = data.choices[0].message;
-            const content = assistantMsg.content;
-            const reasoning = assistantMsg.reasoning_content || null;
+            const result = await callAPI(session);
+            if (!result) { hideTypingIndicator(); return; }
             session.messages.push({
                 role: 'assistant',
-                content: content,
-                reasoning: reasoning,
+                content: result.content,
+                reasoning: result.reasoning,
                 versions: null,
                 versionIndex: 0
             });
@@ -596,13 +742,13 @@
         }
     }
 
-    // ========== 发送消息 ==========
+    // ============================================================
+    // 14. 发送 / 重新生成 / 编辑分支
+    // ============================================================
     async function sendMessage() {
         const userInput = messageInput.value.trim();
         if (!userInput) return;
         if (isWaiting) return;
-        const apiKey = modalApiKey.value.trim();
-        if (!apiKey) { alert('请先输入 API Key'); return; }
         const session = getCurrentSession();
         if (!session) return;
         session.messages.push({ role: 'user', content: userInput });
@@ -613,7 +759,6 @@
         await generateResponseForLastUserInSession(session);
     }
 
-    // ========== 重新生成 ==========
     async function regenerateAssistant(msgIndex) {
         const session = getCurrentSession();
         if (!session) return;
@@ -622,42 +767,22 @@
         let userMsgIndex = msgIndex - 1;
         while (userMsgIndex >= 0 && session.messages[userMsgIndex].role !== 'user') userMsgIndex--;
         if (userMsgIndex < 0) return;
-        const truncatedHistory = session.messages.slice(0, userMsgIndex + 1);
-        const apiKey = modalApiKey.value.trim();
-        if (!apiKey) { alert('请先输入 API Key'); return; }
+        // 截断到用户消息
+        const truncated = session.messages.slice(0, userMsgIndex + 1);
         isWaiting = true;
         sendBtn.disabled = true;
         showTypingIndicator();
         try {
-            const temperature = parseFloat(modalTempSlider.value);
-            const model = modelSelect.value;
-            const apiMessages = truncatedHistory.map(m => ({ role: m.role, content: m.content }));
-            const payload = {
-                model: model,
-                messages: apiMessages,
-                temperature: temperature,
-                max_tokens: 4096,
-                stream: false
-            };
-            const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify(payload)
-            });
-            if (!response.ok) throw new Error('API 请求失败');
-            const data = await response.json();
-            const newContent = data.choices[0].message.content;
-            const newReasoning = data.choices[0].message.reasoning_content || null;
+            const tempSession = { messages: truncated };
+            const result = await callAPI(tempSession);
+            if (!result) { hideTypingIndicator(); return; }
             if (!msg.versions) {
                 msg.versions = [{ content: msg.content, reasoning: msg.reasoning }];
             }
-            msg.versions.push({ content: newContent, reasoning: newReasoning });
+            msg.versions.push({ content: result.content, reasoning: result.reasoning });
             msg.versionIndex = msg.versions.length - 1;
-            msg.content = newContent;
-            msg.reasoning = newReasoning;
+            msg.content = result.content;
+            msg.reasoning = result.reasoning;
             saveSessions();
             hideTypingIndicator();
             renderMessages();
@@ -667,6 +792,32 @@
         } finally {
             isWaiting = false;
             sendBtn.disabled = false;
+        }
+    }
+
+    async function editUserMessageWithBranch(msgIndex, newContent) {
+        if (isWaiting) {
+            isWaiting = false;
+            sendBtn.disabled = false;
+            messageInput.disabled = false;
+        }
+        const oldSession = getCurrentSession();
+        if (!oldSession) { alert('当前会话不存在，请刷新页面'); return; }
+        try {
+            const newId = generateId();
+            const newName = oldSession.name + ' - 分支';
+            const newMessages = oldSession.messages.slice(0, msgIndex + 1);
+            newMessages[msgIndex].content = newContent;
+            const newSession = { id: newId, name: newName, messages: newMessages };
+            sessions.push(newSession);
+            currentSessionId = newId;
+            saveSessions();
+            renderSessions();
+            renderMessages();
+            await generateResponseForLastUserInSession(newSession);
+        } catch (error) {
+            alert('创建分支失败：' + error.message);
+            console.error(error);
         }
     }
 
@@ -682,46 +833,9 @@
         renderMessages();
     }
 
-    // ========== 编辑分支（核心修复） ==========
-    async function editUserMessageWithBranch(msgIndex, newContent) {
-        // 强制重置卡死的状态
-        if (isWaiting) {
-            console.warn('检测到 isWaiting 为 true，强制重置');
-            isWaiting = false;
-            sendBtn.disabled = false;
-            messageInput.disabled = false;
-            // 不弹 alert，让用户继续操作
-        }
-        const oldSession = getCurrentSession();
-        if (!oldSession) {
-            alert('当前会话不存在，请刷新页面');
-            return;
-        }
-        try {
-            // 创建新会话
-            const newId = generateId();
-            const newName = oldSession.name + ' - 分支';
-            const newMessages = oldSession.messages.slice(0, msgIndex + 1);
-            newMessages[msgIndex].content = newContent;
-            const newSession = {
-                id: newId,
-                name: newName,
-                messages: newMessages
-            };
-            sessions.push(newSession);
-            currentSessionId = newId;
-            saveSessions();
-            renderSessions();   // 立即更新侧边栏
-            renderMessages();   // 显示新会话（尚无回复）
-            // 开始生成回复
-            await generateResponseForLastUserInSession(newSession);
-        } catch (error) {
-            alert('创建分支失败：' + error.message);
-            console.error(error);
-        }
-    }
-
-    // ========== 渲染消息 ==========
+    // ============================================================
+    // 15. 渲染消息
+    // ============================================================
     function renderMessages() {
         const session = getCurrentSession();
         if (!session) return;
@@ -733,6 +847,7 @@
         }
         scrollToBottom();
     }
+
     function renderUserMessage(content, index) {
         const card = document.createElement('div');
         card.className = 'message-card user';
@@ -751,6 +866,7 @@
         });
         messagesArea.appendChild(card);
     }
+
     function renderAssistantMessage(msg, index) {
         const card = document.createElement('div');
         card.className = 'message-card assistant';
@@ -806,7 +922,6 @@
         messagesArea.appendChild(card);
     }
 
-    // ========== UI 辅助 ==========
     function showTypingIndicator() {
         const indicator = document.createElement('div');
         indicator.className = 'message-card assistant';
@@ -815,19 +930,20 @@
         messagesArea.appendChild(indicator);
         scrollToBottom();
     }
+
     function hideTypingIndicator() { const el = document.getElementById('typingIndicator'); if (el) el.remove(); }
     function scrollToBottom() { messagesArea.scrollTop = messagesArea.scrollHeight; }
     function autoResizeTextarea() { messageInput.style.height = 'auto'; messageInput.style.height = Math.min(messageInput.scrollHeight, 150) + 'px'; }
 
-    // ========== 模态框 ==========
+    // ============================================================
+    // 16. 模态框
+    // ============================================================
     function openModal() {
         modalOverlay.classList.add('open');
-        modalApiKey.value = localStorage.getItem('deepseek_api_key') || '';
-        modalTempSlider.value = localStorage.getItem('deepseek_temperature') || '1.5';
-        tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1);
-        const savedModel = localStorage.getItem('deepseek_model') || 'deepseek-v4-pro';
-        modelSelect.value = savedModel;
+        providerSelect.value = selectedProvider;
+        updateProviderUI();
     }
+
     function closeModal() {
         modalOverlay.classList.remove('open');
         saveSettings();
@@ -836,7 +952,9 @@
         localStorage.setItem('deepseek_backup_interval', newInterval);
     }
 
-    // ========== 事件绑定 ==========
+    // ============================================================
+    // 17. 事件绑定
+    // ============================================================
     newChatBtn.addEventListener('click', () => { newSession(); if (window.innerWidth <= 700) sidebar.classList.remove('open'); });
     menuToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
     sendBtn.addEventListener('click', sendMessage);
@@ -845,15 +963,31 @@
     settingsBtn.addEventListener('click', openModal);
     closeModalBtn.addEventListener('click', closeModal);
     modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
-    modalTempSlider.addEventListener('input', () => { tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1); });
+
+    // 提供商切换
+    providerSelect.addEventListener('change', () => {
+        selectedProvider = providerSelect.value;
+        updateProviderUI();
+    });
+
+    // 温度滑块
+    modalTempSlider.addEventListener('input', () => {
+        tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1);
+    });
+
+    // 字号 / 主题
     document.querySelectorAll('.font-btn').forEach(btn => { btn.addEventListener('click', () => setFontSize(btn.dataset.font)); });
     document.querySelectorAll('.theme-btn').forEach(btn => { btn.addEventListener('click', () => setTheme(btn.dataset.theme)); });
+
+    // 备份
     manualBackupBtn.addEventListener('click', () => { performBackup(); alert('已手动备份当前数据'); });
     restoreBackupBtn.addEventListener('click', restoreFromBackup);
     exportFileBtn.addEventListener('click', exportToFile);
     importFileBtn.addEventListener('click', importFromFile);
 
-    // ========== 启动 ==========
+    // ============================================================
+    // 18. 启动
+    // ============================================================
     loadData();
     renderSessions();
     renderMessages();
