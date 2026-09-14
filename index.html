@@ -221,16 +221,17 @@
             hint: 'DeepSeek 支持自定义温度（0-2）',
             getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
         },
-        kimi: {
-            name: 'Kimi (Moonshot)',
-            endpoint: 'https://api.moonshot.cn/v1/chat/completions',
-            models: ['kimi-k3'],
-            supportsTemperature: false,
-            temperatureRange: [0, 2],
-            defaultTemperature: 1.0,
-            hint: 'Kimi K3 不支持自定义温度，参数将被忽略[reference:6]',
-            getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
-        },
+      kimi: {
+          name: 'Kimi (Moonshot)',
+          endpoint: 'https://api.moonshot.cn/v1/chat/completions', // 中国平台用 .cn，国际平台用 .ai
+          models: ['kimi-k3', 'kimi-k2.6', 'kimi-k2.7-code', 'kimi-k2.7-code-highspeed'],
+          supportsTemperature: false,
+          temperatureRange: [0, 2],
+          defaultTemperature: 1.0,
+          hint: 'Kimi 模型不支持自定义温度，参数将被忽略',
+          getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
+      },
+           
         grok: {
             name: 'Grok (xAI)',
             endpoint: 'https://api.x.ai/v1/chat/completions',
