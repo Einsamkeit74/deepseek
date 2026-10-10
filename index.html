@@ -334,44 +334,59 @@
     // ============================================================
     // 5. 提供商 UI 更新
     // ============================================================
-    function updateProviderUI() {
-        const cfg = PROVIDERS[selectedProvider];
-        // 更新模型下拉框
-        modelSelect.innerHTML = '';
-        cfg.models.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m;
-            opt.textContent = m;
-            modelSelect.appendChild(opt);
-        });
-        // 恢复之前选择的模型（如果存在）
-        const savedModel = localStorage.getItem('ai_model_' + selectedProvider);
-        if (savedModel && cfg.models.includes(savedModel)) {
-            modelSelect.value = savedModel;
-        } else {
-            modelSelect.value = cfg.models[0];
-        }
-        // 温度设置
-        if (cfg.supportsTemperature) {
-            temperatureSetting.style.display = 'block';
-            modalTempSlider.min = cfg.temperatureRange[0];
-            modalTempSlider.max = cfg.temperatureRange[1];
-            const savedTemp = localStorage.getItem('ai_temperature_' + selectedProvider);
-            modalTempSlider.value = savedTemp ? parseFloat(savedTemp) : cfg.defaultTemperature;
-            tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1);
-            tempHint.textContent = cfg.hint;
-        } else {
-            temperatureSetting.style.display = 'none';
-            tempHint.textContent = cfg.hint;
-        }
-        // Grok 代理设置
-        grokProxySetting.style.display = selectedProvider === 'grok' ? 'block' : 'none';
-        // 更新 API Key 占位提示
-        modalApiKey.placeholder = selectedProvider === 'grok' ? 'xai-xxxxxxxx' : 'sk-xxxxxxxx';
-        // 更新 API Key 值
-        modalApiKey.value = localStorage.getItem('ai_api_key_' + selectedProvider) || '';
+    async function updateProviderUI() {
+    const cfg = PROVIDERS[selectedProvider];
+
+    // 先显示加载中
+    modelSelect.innerHTML = '<option value="">加载中...</option>';
+
+    const apiKey = localStorage.getItem('ai_api_key_' + selectedProvider) || '';
+    let models = [];
+
+    if (apiKey && cfg.listModels) {
+        models = await cfg.listModels(apiKey);
+    } else {
+        models = cfg.defaultModels || [];
     }
 
+    // 填充下拉框
+    modelSelect.innerHTML = '';
+    models.forEach(m => {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        modelSelect.appendChild(opt);
+    });
+
+    // 恢复之前选择的模型（如果存在）
+    const savedModel = localStorage.getItem('ai_model_' + selectedProvider);
+    if (savedModel && models.includes(savedModel)) {
+        modelSelect.value = savedModel;
+    } else if (models.length > 0) {
+        modelSelect.value = models[0];
+    }
+
+    // 温度设置
+    if (cfg.supportsTemperature) {
+        temperatureSetting.style.display = 'block';
+        modalTempSlider.min = cfg.temperatureRange[0];
+        modalTempSlider.max = cfg.temperatureRange[1];
+        const savedTemp = localStorage.getItem('ai_temperature_' + selectedProvider);
+        modalTempSlider.value = savedTemp ? parseFloat(savedTemp) : cfg.defaultTemperature;
+        tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1);
+        tempHint.textContent = cfg.hint;
+    } else {
+        temperatureSetting.style.display = 'none';
+        tempHint.textContent = cfg.hint;
+    }
+
+    // Grok 代理设置
+    grokProxySetting.style.display = selectedProvider === 'grok' ? 'block' : 'none';
+
+    // 更新 API Key 占位提示和值
+    modalApiKey.placeholder = selectedProvider === 'grok' ? 'xai-xxxxxxxx' : 'sk-xxxxxxxx';
+    modalApiKey.value = localStorage.getItem('ai_api_key_' + selectedProvider) || '';
+}
     // ============================================================
     // 6. 存储操作
     // ============================================================
@@ -1006,11 +1021,12 @@
     modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
 
     // 提供商切换
-    providerSelect.addEventListener('change', () => {
-        selectedProvider = providerSelect.value;
-        updateProviderUI();
-    });
-
+  providerSelect.addEventListener('change', async () => {
+    // 切换前先保存当前提供商的设置（尤其是刚输入的 Key）
+    saveSettings();
+    selectedProvider = providerSelect.value;
+    await updateProviderUI();
+});
     // 温度滑块
     modalTempSlider.addEventListener('input', () => {
         tempValueDisplay.textContent = parseFloat(modalTempSlider.value).toFixed(1);
