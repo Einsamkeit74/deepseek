@@ -210,40 +210,80 @@
     // ============================================================
     // 1. 提供商配置表
     // ============================================================
-    const PROVIDERS = {
-        deepseek: {
-            name: 'DeepSeek',
-            endpoint: 'https://api.deepseek.com/v1/chat/completions',
-            models: ['deepseek-v4-pro', 'deepseek-v4-flash'],
-            supportsTemperature: true,
-            temperatureRange: [0, 2],
-            defaultTemperature: 1.0,
-            hint: 'DeepSeek 支持自定义温度（0-2）',
-            getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
-        },
-      kimi: {
-          name: 'Kimi (Moonshot)',
-          endpoint: 'https://api.moonshot.cn/v1/chat/completions', // 中国平台用 .cn，国际平台用 .ai
-          models: ['kimi-k3', 'kimi-k2.6', 'kimi-k2.7-code', 'kimi-k2.7-code-highspeed'],
-          supportsTemperature: false,
-          temperatureRange: [0, 2],
-          defaultTemperature: 1.0,
-          hint: 'Kimi 模型不支持自定义温度，参数将被忽略',
-          getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
-      },
-           
-        grok: {
-            name: 'Grok (xAI)',
-            endpoint: 'https://api.x.ai/v1/chat/completions',
-            models: ['grok-4.6'],
-            supportsTemperature: true,
-            temperatureRange: [0, 2],
-            defaultTemperature: 1.0,
-            hint: 'Grok 支持自定义温度（0-2，默认约1.0）[reference:7]',
-            getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
+   const PROVIDERS = {
+    deepseek: {
+        name: 'DeepSeek',
+        endpoint: 'https://api.deepseek.com/v1/chat/completions',
+        listModelsEndpoint: 'https://api.deepseek.com/v1/models',
+        defaultModels: ['deepseek-flash', 'deepseek-v4-pro'],
+        supportsTemperature: true,
+        temperatureRange: [0, 2],
+        defaultTemperature: 1.0,
+        hint: 'DeepSeek 支持自定义温度（0-2）',
+        getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
+        listModels: async function(apiKey) {
+            try {
+                const response = await fetch(this.listModelsEndpoint, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch models');
+                const data = await response.json();
+                return data.data.map(m => m.id);
+            } catch (e) {
+                console.warn('Failed to fetch DeepSeek models, using defaults:', e);
+                return this.defaultModels;
+            }
         }
-    };
-
+    },
+    kimi: {
+        name: 'Kimi (Moonshot)',
+        endpoint: 'https://api.moonshot.cn/v1/chat/completions',
+        listModelsEndpoint: 'https://api.moonshot.cn/v1/models',
+        defaultModels: ['kimi-k3', 'kimi-k2.6', 'kimi-k2.7-code', 'kimi-k2.7-code-highspeed'],
+        supportsTemperature: false,
+        temperatureRange: [0, 2],
+        defaultTemperature: 1.0,
+        hint: 'Kimi 模型不支持自定义温度，参数将被忽略',
+        getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
+        listModels: async function(apiKey) {
+            try {
+                const response = await fetch(this.listModelsEndpoint, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch models');
+                const data = await response.json();
+                return data.data.map(m => m.id);
+            } catch (e) {
+                console.warn('Failed to fetch Kimi models, using defaults:', e);
+                return this.defaultModels;
+            }
+        }
+    },
+    grok: {
+        name: 'Grok (xAI)',
+        endpoint: 'https://api.x.ai/v1/chat/completions',
+        listModelsEndpoint: 'https://api.x.ai/v1/models',
+        defaultModels: ['grok-4.6'],
+        supportsTemperature: true,
+        temperatureRange: [0, 2],
+        defaultTemperature: 1.0,
+        hint: 'Grok 支持自定义温度（0-2，默认约1.0）',
+        getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
+        listModels: async function(apiKey) {
+            try {
+                const response = await fetch(this.listModelsEndpoint, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch models');
+                const data = await response.json();
+                return data.data.map(m => m.id);
+            } catch (e) {
+                console.warn('Failed to fetch Grok models, using defaults:', e);
+                return this.defaultModels;
+            }
+        }
+    }
+};
     // ============================================================
     // 2. 全局状态
     // ============================================================
