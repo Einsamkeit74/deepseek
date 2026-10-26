@@ -506,45 +506,71 @@
         a.click();
         URL.revokeObjectURL(url);
     }
+    // 导出单个对话
+function exportSingleSession(sessionId) {
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session) return;
+    const data = { sessions: [session], version: '1.0', exportTime: Date.now() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    // 文件名带上对话名字，方便区分
+    a.download = `对话_${session.name.replace(/[/\\?%*:|"<>]/g, '_')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
 
     function importFromFile() {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'application/json';
-        input.onchange = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                try {
-                    let text = ev.target.result;
-                    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-                    const imported = JSON.parse(text);
-                    if (imported.sessions && Array.isArray(imported.sessions) && imported.sessions.length > 0) {
-                        sessions = imported.sessions;
-                        currentSessionId = imported.currentSessionId && sessions.find(s => s.id === imported.currentSessionId)
-                            ? imported.currentSessionId : sessions[0].id;
-                        saveSessions();
-                        renderSessions();
-                        renderMessages();
-                        alert(`导入成功！共 ${sessions.length} 个会话。`);
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'application/json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                let text = ev.target.result;
+                if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // 去除 BOM
+                const imported = JSON.parse(text);
+                
+                let importedSessions = [];
+                // 兼容处理：提取导入的会话数组
+                if (imported.sessions && Array.isArray(imported.sessions) && imported.sessions.length > 0) {
+                    importedSessions = imported.sessions;
+                } else {
+                    const possibleKeys = Object.keys(imported).filter(k => Array.isArray(imported[k]) && imported[k].length > 0 && imported[k][0].messages);
+                    if (possibleKeys.length > 0) {
+                        importedSessions = imported[possibleKeys[0]];
                     } else {
-                        const possibleKeys = Object.keys(imported).filter(k => Array.isArray(imported[k]) && imported[k].length > 0 && imported[k][0].messages);
-                        if (possibleKeys.length > 0) {
-                            sessions = imported[possibleKeys[0]];
-                            currentSessionId = sessions[0].id;
-                            saveSessions();
-                            renderSessions();
-                            renderMessages();
-                            alert(`导入成功（自动识别 ${possibleKeys[0]}）！共 ${sessions.length} 个会话。`);
-                        } else alert('文件格式不正确：未找到有效的会话数据。');
+                        alert('文件格式不正确：未找到有效的会话数据。');
+                        return;
                     }
-                } catch(err) { alert('解析失败：' + err.message); }
-            };
-            reader.readAsText(file);
+                }
+
+                // 合并逻辑：给导入的会话生成新 ID，避免与现有数据冲突，然后追加到 sessions
+                let count = 0;
+                importedSessions.forEach(newSession => {
+                    newSession.id = generateId(); // 重新分配 ID
+                    sessions.push(newSession);
+                    count++;
+                });
+
+                // 保存并刷新界面
+                saveSessions();
+                renderSessions();
+                renderMessages();
+                
+                alert(`成功合并导入 ${count} 个对话！原有的对话已保留。`);
+            } catch(err) { 
+                alert('解析失败：' + err.message); 
+            }
         };
-        input.click();
-    }
+        reader.readAsText(file);
+    };
+    input.click();
+}
 
     function setupAutoBackup(intervalMinutes) {
         if (backupIntervalId) clearInterval(backupIntervalId);
@@ -645,24 +671,34 @@
     // ============================================================
     // 11. 会话管理
     // ============================================================
+
     function renderSessions() {
-        sessionsList.innerHTML = '';
-        sessions.forEach(session => {
-            const div = document.createElement('div');
-            div.className = `session-item ${session.id === currentSessionId ? 'active' : ''}`;
-            div.innerHTML = `
-                <span class="session-name" data-id="${session.id}">${escapeHtml(session.name)}</span>
-                <div class="session-actions">
-                    <button class="session-action rename" data-id="${session.id}" title="重命名">✏️</button>
-                    <button class="session-action delete" data-id="${session.id}" title="删除">🗑️</button>
-                </div>
-            `;
-            div.querySelector('.session-name').addEventListener('click', () => switchSession(session.id));
-            div.querySelector('.rename').addEventListener('click', (e) => { e.stopPropagation(); renameSession(session.id); });
-            div.querySelector('.delete').addEventListener('click', (e) => { e.stopPropagation(); deleteSession(session.id); });
-            sessionsList.appendChild(div);
+    sessionsList.innerHTML = '';
+    sessions.forEach(session => {
+        const div = document.createElement('div');
+        div.className = `session-item ${session.id === currentSessionId ? 'active' : ''}`;
+        // 在 actions 区域增加了“导出”按钮
+        div.innerHTML = `
+            <span class="session-name" data-id="${session.id}">${escapeHtml(session.name)}</span>
+            <div class="session-actions">
+                <button class="session-action export" data-id="${session.id}" title="导出此对话">📤</button>
+                <button class="session-action rename" data-id="${session.id}" title="重命名">✏️</button>
+                <button class="session-action delete" data-id="${session.id}" title="删除">🗑️</button>
+            </div>
+        `;
+        div.querySelector('.session-name').addEventListener('click', () => switchSession(session.id));
+        
+        // 绑定新增的导出事件
+        div.querySelector('.export').addEventListener('click', (e) => { 
+            e.stopPropagation(); 
+            exportSingleSession(session.id); 
         });
-    }
+        
+        div.querySelector('.rename').addEventListener('click', (e) => { e.stopPropagation(); renameSession(session.id); });
+        div.querySelector('.delete').addEventListener('click', (e) => { e.stopPropagation(); deleteSession(session.id); });
+        sessionsList.appendChild(div);
+    });
+}
 
     function switchSession(sessionId) {
         if (sessionId === currentSessionId) return;
