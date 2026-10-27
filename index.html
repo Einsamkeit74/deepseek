@@ -138,11 +138,12 @@
 
         <div class="modal-setting">
             <label>🔌 API 提供商</label>
-            <select id="providerSelect">
-                <option value="deepseek">DeepSeek</option>
-                <option value="kimi">Kimi (Moonshot)</option>
-                <option value="grok">Grok (xAI)</option>
-            </select>
+          <select id="providerSelect">
+              <option value="deepseek">DeepSeek</option>
+              <option value="kimi">Kimi (Moonshot)</option>
+              <option value="grok">Grok (xAI)</option>
+              <option value="baiyu">百雨网关</option>
+          </select>
         </div>
 
         <div class="modal-setting">
@@ -279,6 +280,37 @@
                 return data.data.map(m => m.id);
             } catch (e) {
                 console.warn('Failed to fetch Grok models, using defaults:', e);
+                return this.defaultModels;
+            }
+        }
+    }
+    baiyu: {
+        name: '百雨网关',
+        endpoint: 'https://api.baiyulabs.com/v1/chat/completions',
+        listModelsEndpoint: 'https://api.baiyulabs.com/v1/models',
+        // 预设了常见的 Gemini 等模型，如果下拉框没加载出来，可以用这些兜底
+        defaultModels: [
+            'gemini-2.5-pro', 
+            'gemini-1.5-pro', 
+            'gemini-1.5-flash',
+            'gpt-4o',
+            'claude-3-5-sonnet-20240620'
+        ],
+        supportsTemperature: true,
+        temperatureRange: [0, 2],
+        defaultTemperature: 1.0,
+        hint: '百雨网关聚合了多家模型，请确保 API Key 有相应模型的权限',
+        getMessages: (msgs) => msgs.map(m => ({ role: m.role, content: m.content })),
+        listModels: async function(apiKey) {
+            try {
+                const response = await fetch(this.listModelsEndpoint, {
+                    headers: { 'Authorization': `Bearer ${apiKey}` }
+                });
+                if (!response.ok) throw new Error('Failed to fetch models');
+                const data = await response.json();
+                return data.data.map(m => m.id);
+            } catch (e) {
+                console.warn('Failed to fetch Baiyu models, using defaults:', e);
                 return this.defaultModels;
             }
         }
